@@ -7,3 +7,7 @@ Run Steps:
 - Run _yarn install_
 - Run _yarn run dev_
 - Open the port that is opened from the terminal
+
+To add dependencies:
+
+- Run \*yarn add **dependency-name\***
