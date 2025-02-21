@@ -6,7 +6,7 @@ Run Steps:
 - Clone and open db-project locally
 - Run _yarn install_
 - Navigate into the db-project directory in your terminal
-- Run _yarn run dev_
+- Run _yarn run start_ for basic Expo deployment, otherwise look at yarn scripts in package.json
 - Open the port that is opened from the terminal
 
 To add dependencies:
