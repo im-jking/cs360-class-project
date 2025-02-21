@@ -10,4 +10,4 @@ Run Steps:
 
 To add dependencies:
 
-- Run \*yarn add **dependency-name\***
+- Run "yarn add _dependency-name_"
