@@ -1,2 +1,9 @@
 fastapi
 fastapi[standard]
+pydantic
+pyjwt
+passlib
+bcrypt
+sqlalchemy
+databases
+mysql-connector-python
