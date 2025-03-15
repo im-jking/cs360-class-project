@@ -3,12 +3,13 @@ from typing import Annotated
 
 import jwt
 from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jwt.exceptions import InvalidTokenError
 from passlib.context import CryptContext
 import db
-from db import engine, local_session
-from sqlalchemy.orm import Session
+from db import local_session
+from sqlalchemy.sql import exists
 from pydantic import BaseModel
 
 #Hashing information for user passwords
@@ -30,10 +31,8 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
-
 class TokenData(BaseModel):
     username: str | None = None
-
 
 class User(BaseModel):
     username: str
@@ -41,10 +40,23 @@ class User(BaseModel):
     full_name: str | None = None
     disabled: bool | None = None
 
-
 class UserInDB(User):
     hashed_password: str
 
+class RegistrationInfo(BaseModel):
+    username: str
+    password: str
+    passwordConf: str
+    phone_num: str
+    street_num: str
+    city: str
+    state: str
+    zip_code: int
+    email: str
+
+class LoginInfo(BaseModel):
+    username: str
+    password: str
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -52,10 +64,18 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 app = FastAPI()
 
+#Implement CORS Middleware for all requests
+origins = ["http://localhost:8081"]
+app.add_middleware(
+    CORSMiddleware, 
+    allow_origins=origins, 
+    allow_credentials=True, 
+    allow_methods=['*'], 
+    allow_headers=['*']
+)
 
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
-
 
 def get_password_hash(password):
     return pwd_context.hash(password)
@@ -67,10 +87,13 @@ def get_user(db, username: str):
         return UserInDB(**user_dict)
 
 
-def authenticate_user(fake_db, username: str, password: str):
-    user = get_user(fake_db, username)
-    if (not user and verify_password(password, user.hashed_password)):
-        return False
+def authenticate_user(username: str, password: str):
+    with local_session() as session:
+        user = session.query(exists().where(User.username == username and User.password == password))
+    
+    #For implementing hashed passwords
+    # if (not user and verify_password(password, user.password)):
+    #     return False
     return user
 
 
@@ -113,11 +136,12 @@ async def get_current_active_user(
     return current_user
 
 
-@app.post("/token")
+@app.post("/login")
 async def login_for_access_token(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    # form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    form_data: LoginInfo
 ) -> Token:
-    user = authenticate_user(fake_users_db, form_data.username, form_data.password)
+    user = authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -145,8 +169,14 @@ async def read_own_items(
     return [{"item_id": "Foo", "owner": current_user.username}]
 
 @app.post("/register")
-async def register(registration_info):
-    print("Registration info:" + registration_info)
-    new_user = db.User(**registration_info.dict())
-    local_session.add(new_user)
-    local_session.commit()
+async def register(registration_info: RegistrationInfo):
+    print(registration_info)
+
+    #Remove passwordConf
+    reg_info = registration_info.dict()
+    reg_info.pop("passwordConf")
+
+    with local_session() as session:
+        new_user = db.User(**reg_info)
+        session.add(new_user)
+        session.commit()

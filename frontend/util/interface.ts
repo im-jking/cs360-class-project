@@ -4,11 +4,11 @@ export interface RegistrationInfo {
   username: string;
   password: string;
   passwordConf: string;
-  phone: string;
+  phone_num: string;
   street_num: string;
   city: string;
   state: string;
-  zip: number;
+  zip_code: number | null;
   email: string;
 }
 

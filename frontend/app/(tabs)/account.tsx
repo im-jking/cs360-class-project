@@ -12,11 +12,11 @@ export default function Index() {
     username: "",
     password: "",
     passwordConf: "",
-    phone: "",
+    phone_num: "",
     street_num: "",
     city: "",
     state: "",
-    zip: 0,
+    zip_code: null,
     email: "",
   });
 
@@ -31,19 +31,38 @@ export default function Index() {
 
   //Register a new user through the backend
   const register = async (info: RegistrationInfo) => {
-    const loginInfo = await fetch("http://127.0.0.1:8000/register", {
+    await fetch("http://127.0.0.1:8000/register", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        info,
-      }),
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
+      body: JSON.stringify(info),
     })
-      .then((response) => console.log(response))
+      .then((response) => {
+        console.log("Submitted: " + JSON.stringify(info));
+        console.log(response);
+      })
       .catch((error) => console.error("Registration error:" + error));
   };
 
   //Login an existing user through the backend
-  const login = (info: LoginInfo) => {};
+  const login = async (info: LoginInfo) => {
+    console.log("Submitted: " + JSON.stringify(info));
+    await fetch("http://127.0.0.1:8000/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
+      body: JSON.stringify(info),
+    })
+      .then((response) => {
+        console.log("Submitted: " + JSON.stringify(info));
+        console.log(response);
+      })
+      .catch((error) => console.error("Login error:" + error));
+  };
 
   const bottomBarHeight = useBottomTabBarHeight();
 
@@ -97,9 +116,9 @@ export default function Index() {
               <Input
                 placeholder="Phone #"
                 onChangeText={(value) =>
-                  setCurRegInfo((prev) => ({ ...prev, phone: value }))
+                  setCurRegInfo((prev) => ({ ...prev, phone_num: value }))
                 }
-                value={curRegInfo.phone}
+                value={curRegInfo.phone_num}
               />
               <Input
                 placeholder="Street Address"
@@ -127,10 +146,12 @@ export default function Index() {
                 onChangeText={(value) => {
                   const newNum: number = parseInt(value);
                   if (!isNaN(newNum) && value.length < 8) {
-                    setCurRegInfo((prev) => ({ ...prev, zip: newNum }));
+                    setCurRegInfo((prev) => ({ ...prev, zip_code: newNum }));
                   }
                 }}
-                value={curRegInfo.zip.toString()}
+                value={
+                  curRegInfo.zip_code ? curRegInfo.zip_code.toString() : ""
+                }
               />
               <Input
                 placeholder="Email Address"

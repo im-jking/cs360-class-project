@@ -7,7 +7,7 @@ URL_DATABASE = "mysql+mysqlconnector://class_host:360classproj@localhost:3306/36
 
 engine = create_engine(URL_DATABASE, pool_size= 10, max_overflow= 30)
 
-local_session = sessionmaker(autocommit=False, autoflush=False, bind= engine)
+local_session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 base = declarative_base()
 
