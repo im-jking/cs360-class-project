@@ -16,3 +16,10 @@ export interface LoginInfo {
   username: string;
   password: string;
 }
+
+export interface ProductInfo {
+  prodName: string;
+  prodDesc: string;
+  price: number | null;
+  posted_by: number | null;
+}

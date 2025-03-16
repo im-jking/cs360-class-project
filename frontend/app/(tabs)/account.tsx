@@ -57,10 +57,8 @@ export default function Index() {
       },
       body: JSON.stringify(info),
     })
-      .then((response) => {
-        console.log("Submitted: " + JSON.stringify(info));
-        console.log(response);
-      })
+      .then((response) => response.json())
+      .then((response) => console.log(response))
       .catch((error) => console.error("Login error:" + error));
   };
 

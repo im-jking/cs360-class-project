@@ -8,7 +8,8 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jwt.exceptions import InvalidTokenError
 from passlib.context import CryptContext
 import db
-from db import local_session
+from db import engine, local_session
+from sqlalchemy.orm import Session
 from sqlalchemy.sql import exists
 from pydantic import BaseModel
 
@@ -58,6 +59,12 @@ class LoginInfo(BaseModel):
     username: str
     password: str
 
+class ProductInfo(BaseModel):
+    prodName: str
+    prodDesc: str
+    price: int | None
+    posted_by: int | None
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -80,22 +87,19 @@ def verify_password(plain_password, hashed_password):
 def get_password_hash(password):
     return pwd_context.hash(password)
 
-
 def get_user(db, username: str):
     if username in db:
         user_dict = db[username]
         return UserInDB(**user_dict)
 
-
 def authenticate_user(username: str, password: str):
     with local_session() as session:
-        user = session.query(exists().where(User.username == username and User.password == password))
+        user = session.query(exists().where(db.User.username == username and db.User.password == password))
     
     #For implementing hashed passwords
     # if (not user and verify_password(password, user.password)):
     #     return False
     return user
-
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
@@ -106,7 +110,6 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
-
 
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
     credentials_exception = HTTPException(
@@ -127,14 +130,12 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
         raise credentials_exception
     return user
 
-
 async def get_current_active_user(
     current_user: Annotated[User, Depends(get_current_user)],
 ):
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
-
 
 @app.post("/login")
 async def login_for_access_token(
@@ -150,7 +151,7 @@ async def login_for_access_token(
         )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
+        data={"sub": form_data.username}, expires_delta=access_token_expires
     )
     return Token(access_token=access_token, token_type="bearer")
 
@@ -179,4 +180,32 @@ async def register(registration_info: RegistrationInfo):
     with local_session() as session:
         new_user = db.User(**reg_info)
         session.add(new_user)
+        session.commit()
+
+#Return all product descriptions
+@app.get("/products")
+async def get_products():
+    with local_session() as session:
+        products = session.query(db.Products).all()
+        products_arr = []
+        for product in products:
+            next_prod = vars(product)
+            next_prod.pop('_sa_instance_state')
+            products_arr.append(next_prod)
+        return products_arr
+
+
+#Add products for sale
+@app.post("/products")
+async def add_product(product_info: ProductInfo):
+    #Generate data not given on frontend
+    prod_info = product_info.dict()
+    prod_info["datetime_created"] = datetime.now()
+    prod_info["is_active"] = False
+    prod_info["is_exchanged"] = False
+    #ADD USER WHO MADE THIS REQUEST AS posted_by
+
+    with local_session() as session:
+        new_product = db.Products(**prod_info)
+        session.add(new_product)
         session.commit()
