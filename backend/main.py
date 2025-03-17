@@ -63,7 +63,7 @@ class ProductInfo(BaseModel):
     prodName: str
     prodDesc: str
     price: int | None
-    posted_by: int | None
+    posted_by: str | None
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -203,7 +203,6 @@ async def add_product(product_info: ProductInfo):
     prod_info["datetime_created"] = datetime.now()
     prod_info["is_active"] = False
     prod_info["is_exchanged"] = False
-    #ADD USER WHO MADE THIS REQUEST AS posted_by
 
     with local_session() as session:
         new_product = db.Products(**prod_info)

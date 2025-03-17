@@ -6,6 +6,9 @@ import { RegistrationInfo, LoginInfo } from "@/util/interface";
 import { parse } from "@babel/core";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 
+import { getUser, HOST_WITH_PORT_API, setUser } from "@/util/environment";
+import { clearTokens, getToken, storeToken } from "@/util/credentials";
+
 export default function Index() {
   //Store entered registration data
   const [curRegInfo, setCurRegInfo] = useState<RegistrationInfo>({
@@ -31,7 +34,7 @@ export default function Index() {
 
   //Register a new user through the backend
   const register = async (info: RegistrationInfo) => {
-    await fetch("http://127.0.0.1:8000/register", {
+    await fetch(`${HOST_WITH_PORT_API}/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -49,7 +52,7 @@ export default function Index() {
   //Login an existing user through the backend
   const login = async (info: LoginInfo) => {
     console.log("Submitted: " + JSON.stringify(info));
-    await fetch("http://127.0.0.1:8000/login", {
+    await fetch(`${HOST_WITH_PORT_API}/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -58,8 +61,19 @@ export default function Index() {
       body: JSON.stringify(info),
     })
       .then((response) => response.json())
-      .then((response) => console.log(response))
+      .then((response) => storeToken(info.username, response.access_token))
+      .then(() => {
+        storeToken("user", info.username);
+        setUser(info.username);
+        setCurLogInfo({ username: "", password: "" });
+      })
       .catch((error) => console.error("Login error:" + error));
+  };
+
+  const logout = async () => {
+    await clearTokens();
+    setUser(null);
+    setCurLogInfo({ username: "", password: "" });
   };
 
   const bottomBarHeight = useBottomTabBarHeight();
@@ -76,15 +90,17 @@ export default function Index() {
           }}
         >
           {/* Buttons for menu selection */}
-          {menuOpen === 0 && (
+          {menuOpen === 0 && getUser() == null && (
             <>
+              <Text>{"\n"}</Text>
               <Button title="Register" onPress={() => setMenuOpen(1)}></Button>
+              <Text>{"\n"}</Text>
               <Button title="Log In" onPress={() => setMenuOpen(2)}></Button>
             </>
           )}
 
           {/* All registration components are in this section */}
-          {menuOpen === 1 && (
+          {menuOpen === 1 && getUser() == null && (
             <>
               <Text style={{ fontSize: 24 }}>Register</Text>
 
@@ -165,7 +181,7 @@ export default function Index() {
           )}
 
           {/* All login components are in this section */}
-          {menuOpen === 2 && (
+          {menuOpen === 2 && getUser() == null && (
             <>
               <Text style={{ fontSize: 24 }}>Login</Text>
 
@@ -189,6 +205,9 @@ export default function Index() {
               <Button title="Register" onPress={() => setMenuOpen(1)}></Button>
             </>
           )}
+
+          {/* Logout components */}
+          {getUser() != null && <Button title="Logout" onPress={logout} />}
         </View>
       </ScrollView>
     </SafeAreaView>

@@ -1,3 +1,5 @@
+import { getToken } from "@/util/credentials";
+import { HOST_WITH_PORT_API } from "@/util/environment";
 import { ProductInfo } from "@/util/interface";
 import { Input } from "@rneui/themed";
 import { useState } from "react";
@@ -12,7 +14,16 @@ export default function Index() {
   });
 
   const add_prod = async (new_prod: ProductInfo) => {
-    await fetch("http://127.0.0.1:8000/products", {
+    //Prevent unauthenticated users from adding items
+    const isLoggedIn = await getToken("user");
+    if (!isLoggedIn) {
+      alert("Must log in to post products.");
+      return;
+    }
+
+    new_prod["posted_by"] = isLoggedIn;
+
+    await fetch(`${HOST_WITH_PORT_API}/products`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -64,18 +75,6 @@ export default function Index() {
             }}
             value={curProdInfo.price ? curProdInfo.price.toString() : ""}
           />
-          {/* <Input
-            placeholder="ZIP Code"
-            onChangeText={(value) => {
-              const newNum: number = parseInt(value);
-              if (!isNaN(newNum) && value.length < 8) {
-                setCurProdInfo((prev) => ({ ...prev, zip_code: newNum }));
-              }
-            }}
-            value={
-              curProdInfo.posted_by ? curProdInfo.posted_by.toString() : ""
-            }
-          /> */}
           <Button title="Submit" onPress={() => add_prod(curProdInfo)} />
         </View>
       </ScrollView>

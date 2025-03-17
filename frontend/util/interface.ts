@@ -21,5 +21,16 @@ export interface ProductInfo {
   prodName: string;
   prodDesc: string;
   price: number | null;
+  posted_by: string | null;
+}
+
+export interface ProductFinal {
+  datetime_created: string;
+  idProducts: number;
+  is_active: boolean;
+  is_exchanged: boolean;
   posted_by: number | null;
+  price: number;
+  prodDesc: string;
+  prodName: string;
 }

@@ -14,7 +14,7 @@ Run Steps:
   - Navigate into the _/backend_ directory in your terminal
   - [Activate your virtual environment](https://fastapi.tiangolo.com/virtual-environments/#activate-the-virtual-environment)
   - Run _pip install -r requirements.txt_
-  - Start the server with _fastapi dev main.py_
+  - Start the server with _fastapi dev main.py --host 0.0.0.0_
   - See API documentation at [localhost/docs](http://127.0.0.1:8000/docs)
   - To add dependencies type them out on a new line in _requirements.txt_
 - Database

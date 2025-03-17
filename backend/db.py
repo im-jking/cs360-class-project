@@ -37,7 +37,7 @@ class Products(base):
     datetime_created = Column(DateTime)
     is_active = Column(Boolean)
     is_exchanged = Column(Boolean)
-    posted_by = Column(Integer)
+    posted_by = Column(String(45))
 
 class Transactions(base):
     __tablename__ = 'transactions'
