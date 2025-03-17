@@ -1,5 +1,4 @@
 import { Tabs } from "expo-router";
-import { IconSymbol } from "@/app-example/components/ui/IconSymbol";
 
 export default function TabLayout() {
   return (

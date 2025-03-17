@@ -34,6 +34,12 @@ export default function Index() {
       .then((response) => {
         console.log("Submitted: " + JSON.stringify(new_prod));
         console.log(response);
+        setCurProdInfo({
+          prodName: "",
+          prodDesc: "",
+          price: null,
+          posted_by: null,
+        });
       })
       .catch((error) => console.error("Add product error:" + error));
   };
