@@ -5,10 +5,12 @@ import jwt
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+import json
 from jwt.exceptions import InvalidTokenError
 from passlib.context import CryptContext
 import db
 from db import engine, local_session
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import exists
 from pydantic import BaseModel
@@ -65,6 +67,17 @@ class ProductInfo(BaseModel):
     price: int | None
     posted_by: str | None
     quantity: int | None
+
+class TransactionInfo(BaseModel):
+    item_exchanged_1: int
+    item_exchanged_2: int
+    party_1: str
+    party_2: str
+    date_started: datetime | None = None
+    date_ended: datetime | None = None
+    hash_key: str | None = None
+    via_1: str | None = None
+    via_2: str | None = None
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -178,8 +191,6 @@ async def read_own_items(
 
 @app.post("/register")
 async def register(registration_info: RegistrationInfo):
-    print(registration_info)
-
     #Remove passwordConf
     reg_info = registration_info.dict()
     reg_info.pop("passwordConf")
@@ -214,4 +225,36 @@ async def add_product(product_info: ProductInfo):
     with local_session() as session:
         new_product = db.Products(**prod_info)
         session.add(new_product)
+        session.commit()
+
+#Get a specific user's products
+@app.post("/user_products")
+async def get_user_products(username: str):
+    with local_session() as session:
+        statement = select(db.Products).filter_by(posted_by=username)
+        products = session.scalars(statement).all()
+        return products
+    
+@app.get("/transactions")
+async def get_transactions():
+    with local_session as session:
+        transactions = session.query(db.Transactions).all()
+        transactions_arr = []
+        for transaction in transactions:
+            next_transaction = vars(transaction)
+            next_transaction.pop('_sa_instance_state')
+            transactions_arr.append(next_transaction)
+        return transactions_arr
+    
+@app.post("/transactions")
+async def add_transaction(transaction_info: TransactionInfo):
+    #Generate data not given on frontend
+    trans_info = transaction_info.dict()
+    trans_info["date_started"] = str(datetime.now())
+    hashed_dict = str(hash(json.dumps(trans_info, sort_keys=True)))
+    trans_info["hash_key"] = hashed_dict
+
+    with local_session() as session:
+        new_trans = db.Transactions(**trans_info)
+        session.add(new_trans)
         session.commit()

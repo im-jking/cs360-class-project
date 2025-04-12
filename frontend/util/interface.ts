@@ -30,9 +30,22 @@ export interface ProductFinal {
   idProducts: number;
   is_active: boolean;
   is_exchanged: boolean;
-  posted_by: number | null;
+  posted_by: string | null;
   price: number;
   prodDesc: string;
   prodName: string;
   quantity: number;
+}
+
+export interface TransactionInfo {
+  idtransactions: number;
+  item_exchanged_1: number;
+  item_exchanged_2: number;
+  party_1: string;
+  party_2: string;
+  date_started: string;
+  date_ended: string;
+  hash_key: string;
+  via_1: string;
+  via_2: string;
 }
