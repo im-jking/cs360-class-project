@@ -11,6 +11,7 @@ export default function Index() {
     prodDesc: "",
     price: null,
     posted_by: null,
+    quantity: 0,
   });
 
   const add_prod = async (new_prod: ProductInfo) => {
@@ -39,6 +40,7 @@ export default function Index() {
           prodDesc: "",
           price: null,
           posted_by: null,
+          quantity: 0,
         });
       })
       .catch((error) => console.error("Add product error:" + error));
@@ -80,6 +82,16 @@ export default function Index() {
               }
             }}
             value={curProdInfo.price ? curProdInfo.price.toString() : ""}
+          />
+          <Input
+            placeholder="Listing Quantity"
+            onChangeText={(value) => {
+              const newNum: number = parseInt(value);
+              if (!isNaN(newNum) && value.length < 8) {
+                setCurProdInfo((prev) => ({ ...prev, quantity: newNum }));
+              }
+            }}
+            value={curProdInfo.quantity ? curProdInfo.quantity.toString() : ""}
           />
           <Button title="Submit" onPress={() => add_prod(curProdInfo)} />
         </View>

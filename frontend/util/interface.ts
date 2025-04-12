@@ -22,6 +22,7 @@ export interface ProductInfo {
   prodDesc: string;
   price: number | null;
   posted_by: string | null;
+  quantity: number;
 }
 
 export interface ProductFinal {
@@ -33,4 +34,5 @@ export interface ProductFinal {
   price: number;
   prodDesc: string;
   prodName: string;
+  quantity: number;
 }

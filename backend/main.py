@@ -64,6 +64,7 @@ class ProductInfo(BaseModel):
     prodDesc: str
     price: int | None
     posted_by: str | None
+    quantity: int | None
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -72,7 +73,13 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 app = FastAPI()
 
 #Implement CORS Middleware for all requests
-origins = ["http://localhost:8081"]
+origins = [
+    "http://localhost:8081", 
+    "http://127.0.0.1:8081", 
+    "https://localhost:8081", 
+    "https://127.0.0.1:8081"
+]
+
 app.add_middleware(
     CORSMiddleware, 
     allow_origins=origins, 
