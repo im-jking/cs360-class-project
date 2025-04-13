@@ -2,7 +2,7 @@ import { getToken } from "@/util/credentials";
 import { getUser, HOST_WITH_PORT_API } from "@/util/environment";
 import { ProductFinal } from "@/util/interface";
 import { useIsFocused } from "@react-navigation/native";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Button,
@@ -186,10 +186,9 @@ export default function Index() {
         </View>
         <Text>{"\n"}</Text>
         {products?.map((product) => (
-          <>
+          <React.Fragment key={product.idProducts}>
             <View
               style={{ flex: 1, alignSelf: "stretch", flexDirection: "row" }}
-              key={product.idProducts}
             >
               <View style={{ flex: 1, alignSelf: "stretch" }}>
                 <Text>{product.quantity}</Text>
@@ -213,7 +212,7 @@ export default function Index() {
               </View>
             </View>
             <Text>{"\n"}</Text>
-          </>
+          </React.Fragment>
         ))}
       </View>
     );
@@ -407,7 +406,7 @@ export default function Index() {
               / {offerInfo?.quantity}
             </Text>
 
-            {selectedProduct && (
+            {selectedProduct ? (
               <>
                 <Text
                   style={{
@@ -425,7 +424,7 @@ export default function Index() {
                   </Text>
                 </View>
               </>
-            )}
+            ) : null}
 
             <Text style={{ fontWeight: "bold" }}>Your Offer:</Text>
 
@@ -621,7 +620,7 @@ export default function Index() {
               ))}
             </View>
 
-            {selectedOffer && (
+            {selectedOffer ? (
               <Text
                 style={{
                   fontWeight: "bold",
@@ -646,7 +645,7 @@ export default function Index() {
                 / {selectedOffer.prod.quantity}
                 {"\n"}
               </Text>
-            )}
+            ) : null}
 
             <View style={{ flexDirection: "row" }}>
               <Pressable

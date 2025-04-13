@@ -83,6 +83,18 @@ class TransactionInfo(BaseModel):
     value_1: int | None = None
     value_2: int | None = None
 
+class TransactionReadable(BaseModel):
+    idtransactions: int
+    prod_1: str
+    prod_2: str
+    id_1: int
+    id_2: int
+    quant_1: int
+    quant_2: int
+    value_1: int
+    value_2: int
+    is_active: bool
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -311,6 +323,8 @@ async def get_transactions(username: str | None = None, active_status: bool | No
                 "idtransactions": next_transaction["idtransactions"],
                 "prod_1": prod_name_1,
                 "prod_2": prod_name_2,
+                "id_1": next_transaction["item_exchanged_1"],
+                "id_2": next_transaction["item_exchanged_2"],
                 "quant_1": next_transaction["quantity_1"],
                 "quant_2": next_transaction["quantity_2"],
                 "value_1": next_transaction["value_1"],
@@ -335,20 +349,87 @@ async def add_transaction(transaction_info: TransactionInfo):
     return {"message": "Transaction added successfully"}
 
 @app.post("/accept_transaction")
-async def accept_transaction(trans_id: int):
+async def accept_transaction(transaction_info: TransactionReadable):
+    trans_info = transaction_info.dict()
+
     with local_session() as session:
+        #Create finished transaction
         dt_finished = str(datetime.now())
-        query = update(db.Transactions).values({"date_ended": dt_finished, "is_active": 0}).where(db.Transactions.idtransactions == trans_id)
-        # session.scalars(query).all()
+        query = update(db.Transactions).values({"date_ended": dt_finished, "is_active": 0}).where(db.Transactions.idtransactions == trans_info["idtransactions"])
         session.execute(query)
         session.commit()
+
+        #Edit products with new values
+        statement = select(db.Transactions).filter_by(idtransactions=trans_info["idtransactions"])
+        real_transaction = session.scalars(statement).first()
+        statement = select(db.Products).filter_by(idProducts=real_transaction.item_exchanged_1)
+        product = session.scalars(statement).first()
+        if product is None:
+            raise HTTPException(status_code=404, detail=f"Product 1 ({real_transaction.item_exchanged_1}) not found")
+
+        #Transfer product 1 to party 2
+        new_quant = product.quantity - real_transaction.quantity_1
+        if new_quant <= 0:
+            statement = update(db.Products).values({"posted_by": real_transaction.party_2}).where(db.Products.idProducts == product.idProducts)
+            session.execute(statement)
+            session.commit()
+        else:
+            statement = update(db.Products).values({"quantity": new_quant}).where(db.Products.idProducts == product.idProducts)
+            session.execute(statement)
+            session.commit()
+
+            statement = select(db.Products).filter_by(idProducts=real_transaction.item_exchanged_1)
+            product_info = session.scalars(statement).first()
+            prod_info = vars(product_info)
+            prod_info.pop('_sa_instance_state')
+            prod_info['idProducts'] = None
+            prod_info["posted_by"] = real_transaction.party_2
+            prod_info["quantity"] = real_transaction.quantity_1
+            prod_info["datetime_created"] = datetime.now()
+            prod_info["is_active"] = False
+            prod_info["is_exchanged"] = False
+
+            new_product = db.Products(**prod_info)
+            session.add(new_product)
+            session.commit()
+
+        statement = select(db.Products).filter_by(idProducts=real_transaction.item_exchanged_2)
+        product = session.scalars(statement).first()
+        if product is None:
+            raise HTTPException(status_code=404, detail=f"Product 1 ({real_transaction.item_exchanged_2}) not found")
+
+        #Transfer product 1 to party 2
+        new_quant = product.quantity - real_transaction.quantity_2
+        if new_quant <= 0:
+            statement = update(db.Products).values({"posted_by": real_transaction.party_1}).where(db.Products.idProducts == product.idProducts)
+            session.execute(statement)
+            session.commit()
+        else:
+            statement = update(db.Products).values({"quantity": new_quant}).where(db.Products.idProducts == product.idProducts)
+            session.execute(statement)
+            session.commit()
+
+            statement = select(db.Products).filter_by(idProducts=real_transaction.item_exchanged_2)
+            product_info = session.scalars(statement).first()
+            prod_info = vars(product_info)
+            prod_info.pop('_sa_instance_state')
+            prod_info['idProducts'] = None
+            prod_info["posted_by"] = real_transaction.party_1
+            prod_info["quantity"] = real_transaction.quantity_2
+            prod_info["datetime_created"] = datetime.now()
+            prod_info["is_active"] = False
+            prod_info["is_exchanged"] = False
+
+            new_product = db.Products(**prod_info)
+            session.add(new_product)
+            session.commit()
+
     return {"message": "Transaction updated successfully"}
 
 @app.post("/delete_transaction")
 async def delete_transaction(trans_id: int):
     with local_session() as session:
         query = delete(db.Transactions).where(db.Transactions.idtransactions == trans_id)
-        # session.scalars(query).all()
         session.execute(query)
         session.commit()
     return {"message": "Transaction deleted successfully"} 

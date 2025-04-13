@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Button,
   Pressable,
@@ -218,24 +218,25 @@ export default function Index() {
     setCurLogInfo({ username: "", password: "" });
   };
 
-  const acceptTrans = async (accept: boolean, this_id: number) => {
+  const acceptTrans = async (
+    accept: boolean,
+    this_trans: TransactionReadable
+  ) => {
     if (accept) {
-      await fetch(
-        `${HOST_WITH_PORT_API}/accept_transaction?trans_id=${this_id}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
-        }
-      )
+      await fetch(`${HOST_WITH_PORT_API}/accept_transaction`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+        body: JSON.stringify(this_trans),
+      })
         .then((response) => response.json())
         .then((response) => console.log(response))
         .catch((error) => console.error("Accept transaction error: " + error));
     } else {
       await fetch(
-        `${HOST_WITH_PORT_API}/delete_transaction?trans_id=${this_id}`,
+        `${HOST_WITH_PORT_API}/delete_transaction?trans_id=${this_trans.idtransactions}`,
         {
           method: "POST",
           headers: {
@@ -279,7 +280,7 @@ export default function Index() {
           </View>
         </View>
         {ownProducts?.map((product) => (
-          <>
+          <React.Fragment key={product.idProducts}>
             <View
               style={{
                 width: "100%",
@@ -288,7 +289,6 @@ export default function Index() {
                 flexDirection: "row",
                 marginBottom: 10,
               }}
-              key={product.idProducts}
             >
               <View style={{ flex: 1, alignSelf: "stretch" }}>
                 <Text>{product.quantity}</Text>
@@ -304,256 +304,239 @@ export default function Index() {
               </View>
             </View>
             <Text>{"\n"}</Text>
-          </>
+          </React.Fragment>
         ))}
-        ;
       </>
     );
   };
 
   const OpenTransactions = () => {
-    return (
-      openTransactions.length > 0 && (
-        <>
-          <Text style={{ fontSize: 24, marginBottom: 10 }}>
-            Open Transactions
-          </Text>
-          <View
-            style={{
-              width: "100%",
-              flex: 1,
-              alignSelf: "stretch",
-              flexDirection: "row",
-              marginBottom: 10,
-            }}
-          >
-            <View style={{ flex: 1, alignSelf: "stretch" }}>
-              <Text style={{ fontWeight: "bold" }}>Request</Text>
-            </View>
-            <View style={{ flex: 1, alignSelf: "stretch" }}>
-              <Text style={{ fontWeight: "bold" }}>Offer</Text>
-            </View>
+    return openTransactions.length > 0 ? (
+      <>
+        <Text style={{ fontSize: 24, marginBottom: 10 }}>
+          Open Transactions
+        </Text>
+        <View
+          style={{
+            width: "100%",
+            flex: 1,
+            alignSelf: "stretch",
+            flexDirection: "row",
+            marginBottom: 10,
+          }}
+        >
+          <View style={{ flex: 1, alignSelf: "stretch" }}>
+            <Text style={{ fontWeight: "bold" }}>Request</Text>
           </View>
-          {openTransactions?.map((transaction) => (
-            <>
-              <View
-                style={{
-                  width: "100%",
-                  flex: 1,
-                  alignSelf: "stretch",
-                  flexDirection: "row",
-                  marginBottom: 10,
-                }}
-                key={transaction.idtransactions}
-              >
-                <View style={{ flex: 1, alignSelf: "stretch" }}>
-                  <Text>
-                    {transaction.quant_1} x {transaction.prod_1} (Val.{" "}
-                    {transaction.value_1})
-                  </Text>
-                </View>
-                <View style={{ flex: 1, alignSelf: "stretch" }}>
-                  <Text>
-                    {transaction.quant_2} x {transaction.prod_2} (Val.{" "}
-                    {transaction.value_2})
-                  </Text>
-                </View>
+          <View style={{ flex: 1, alignSelf: "stretch" }}>
+            <Text style={{ fontWeight: "bold" }}>Offer</Text>
+          </View>
+        </View>
+        {openTransactions?.map((transaction) => (
+          <>
+            <View
+              style={{
+                width: "100%",
+                flex: 1,
+                alignSelf: "stretch",
+                flexDirection: "row",
+                marginBottom: 10,
+              }}
+              key={transaction.idtransactions}
+            >
+              <View style={{ flex: 1, alignSelf: "stretch" }}>
+                <Text>
+                  {transaction.quant_1} x {transaction.prod_1} (Val.{" "}
+                  {transaction.value_1})
+                </Text>
               </View>
-              <Text>{"\n"}</Text>
-            </>
-          ))}
-          ;
-        </>
-      )
-    );
+              <View style={{ flex: 1, alignSelf: "stretch" }}>
+                <Text>
+                  {transaction.quant_2} x {transaction.prod_2} (Val.{" "}
+                  {transaction.value_2})
+                </Text>
+              </View>
+            </View>
+            <Text>{"\n"}</Text>
+          </>
+        ))}
+        ;
+      </>
+    ) : null;
   };
 
   const OpenRequests = () => {
-    return (
-      openRequests.length > 0 && (
-        <>
-          <Text style={{ fontSize: 24, marginBottom: 10 }}>Open Requests</Text>
-          <View
-            style={{
-              width: "100%",
-              flex: 1,
-              alignSelf: "stretch",
-              flexDirection: "row",
-              marginBottom: 10,
-            }}
-          >
-            <View style={{ flex: 1, alignSelf: "stretch" }}>
-              <Text style={{ fontWeight: "bold" }}>Request</Text>
-            </View>
-            <View style={{ flex: 1, alignSelf: "stretch" }}>
-              <Text style={{ fontWeight: "bold" }}>Offer</Text>
-            </View>
-            <View style={{ flex: 1, alignSelf: "stretch" }}></View>
+    return openRequests.length > 0 ? (
+      <>
+        <Text style={{ fontSize: 24, marginBottom: 10 }}>Open Requests</Text>
+        <View
+          style={{
+            width: "100%",
+            flex: 1,
+            alignSelf: "stretch",
+            flexDirection: "row",
+            marginBottom: 10,
+          }}
+        >
+          <View style={{ flex: 1, alignSelf: "stretch" }}>
+            <Text style={{ fontWeight: "bold" }}>Request</Text>
           </View>
-          {openRequests?.map((transaction) => (
-            <>
-              <View
-                style={{
-                  width: "100%",
-                  flex: 1,
-                  alignSelf: "stretch",
-                  flexDirection: "row",
-                  marginBottom: 10,
-                }}
-                key={transaction.idtransactions}
-              >
-                <View style={{ flex: 1, alignSelf: "stretch" }}>
-                  <Text>
-                    {transaction.quant_1} x {transaction.prod_1} (Val.{" "}
-                    {transaction.value_1})
-                  </Text>
-                </View>
-                <View style={{ flex: 1, alignSelf: "stretch" }}>
-                  <Text>
-                    {transaction.quant_2} x {transaction.prod_2} (Val.{" "}
-                    {transaction.value_2})
-                  </Text>
-                </View>
-                <View style={{ flex: 1, alignSelf: "stretch" }}>
-                  <Pressable
-                    onPress={() =>
-                      acceptTrans(true, transaction.idtransactions)
-                    }
-                  >
-                    <Text style={{ color: "blue" }}>Accept</Text>
-                  </Pressable>
-                </View>
-                <View>
-                  <Pressable
-                    onPress={() =>
-                      acceptTrans(false, transaction.idtransactions)
-                    }
-                  >
-                    <Text style={{ color: "red" }}>Decline</Text>
-                  </Pressable>
-                </View>
+          <View style={{ flex: 1, alignSelf: "stretch" }}>
+            <Text style={{ fontWeight: "bold" }}>Offer</Text>
+          </View>
+          <View style={{ flex: 1, alignSelf: "stretch" }}></View>
+        </View>
+        {openRequests?.map((transaction) => (
+          <>
+            <View
+              style={{
+                width: "100%",
+                flex: 1,
+                alignSelf: "stretch",
+                flexDirection: "row",
+                marginBottom: 10,
+              }}
+              key={transaction.idtransactions}
+            >
+              <View style={{ flex: 1, alignSelf: "stretch" }}>
+                <Text>
+                  {transaction.quant_1} x {transaction.prod_1} (Val.{" "}
+                  {transaction.value_1})
+                </Text>
               </View>
-              <Text>{"\n"}</Text>
-            </>
-          ))}
-          ;
-        </>
-      )
-    );
+              <View style={{ flex: 1, alignSelf: "stretch" }}>
+                <Text>
+                  {transaction.quant_2} x {transaction.prod_2} (Val.{" "}
+                  {transaction.value_2})
+                </Text>
+              </View>
+              <View style={{ flex: 1, alignSelf: "stretch" }}>
+                <Pressable onPress={() => acceptTrans(true, transaction)}>
+                  <Text style={{ color: "blue" }}>Accept</Text>
+                </Pressable>
+              </View>
+              <View>
+                <Pressable onPress={() => acceptTrans(false, transaction)}>
+                  <Text style={{ color: "red" }}>Decline</Text>
+                </Pressable>
+              </View>
+            </View>
+            <Text>{"\n"}</Text>
+          </>
+        ))}
+        ;
+      </>
+    ) : null;
   };
 
   const ClosedTransactions = () => {
-    return (
-      closedTransactions.length > 0 && (
-        <>
-          <Text style={{ fontSize: 24, marginBottom: 10 }}>
-            Closed Transactions
-          </Text>
-          <View
-            style={{
-              width: "100%",
-              flex: 1,
-              alignSelf: "stretch",
-              flexDirection: "row",
-              marginBottom: 10,
-            }}
-          >
-            <View style={{ flex: 1, alignSelf: "stretch" }}>
-              <Text style={{ fontWeight: "bold" }}>Request</Text>
-            </View>
-            <View style={{ flex: 1, alignSelf: "stretch" }}>
-              <Text style={{ fontWeight: "bold" }}>Offer</Text>
-            </View>
+    return closedTransactions.length > 0 ? (
+      <>
+        <Text style={{ fontSize: 24, marginBottom: 10 }}>
+          Closed Transactions
+        </Text>
+        <View
+          style={{
+            width: "100%",
+            flex: 1,
+            alignSelf: "stretch",
+            flexDirection: "row",
+            marginBottom: 10,
+          }}
+        >
+          <View style={{ flex: 1, alignSelf: "stretch" }}>
+            <Text style={{ fontWeight: "bold" }}>Request</Text>
           </View>
-          {closedTransactions?.map((transaction) => (
-            <>
-              <View
-                style={{
-                  width: "100%",
-                  flex: 1,
-                  alignSelf: "stretch",
-                  flexDirection: "row",
-                  marginBottom: 10,
-                }}
-                key={transaction.idtransactions}
-              >
-                <View style={{ flex: 1, alignSelf: "stretch" }}>
-                  <Text>
-                    {transaction.quant_1} x {transaction.prod_1} (Val.{" "}
-                    {transaction.value_1})
-                  </Text>
-                </View>
-                <View style={{ flex: 1, alignSelf: "stretch" }}>
-                  <Text>
-                    {transaction.quant_2} x {transaction.prod_2} (Val.{" "}
-                    {transaction.value_2})
-                  </Text>
-                </View>
+          <View style={{ flex: 1, alignSelf: "stretch" }}>
+            <Text style={{ fontWeight: "bold" }}>Offer</Text>
+          </View>
+        </View>
+        {closedTransactions?.map((transaction) => (
+          <>
+            <View
+              style={{
+                width: "100%",
+                flex: 1,
+                alignSelf: "stretch",
+                flexDirection: "row",
+                marginBottom: 10,
+              }}
+              key={transaction.idtransactions}
+            >
+              <View style={{ flex: 1, alignSelf: "stretch" }}>
+                <Text>
+                  {transaction.quant_1} x {transaction.prod_1} (Val.{" "}
+                  {transaction.value_1})
+                </Text>
               </View>
-              <Text>{"\n"}</Text>
-            </>
-          ))}
-          ;
-        </>
-      )
-    );
+              <View style={{ flex: 1, alignSelf: "stretch" }}>
+                <Text>
+                  {transaction.quant_2} x {transaction.prod_2} (Val.{" "}
+                  {transaction.value_2})
+                </Text>
+              </View>
+            </View>
+            <Text>{"\n"}</Text>
+          </>
+        ))}
+        ;
+      </>
+    ) : null;
   };
 
   const AdminInfo = () => {
-    return (
-      allTransactions.length > 0 && (
-        <>
-          <Text style={{ fontSize: 24, marginBottom: 10 }}>
-            Admins Only - All Transactions
-          </Text>
-          <View
-            style={{
-              width: "100%",
-              flex: 1,
-              alignSelf: "stretch",
-              flexDirection: "row",
-              marginBottom: 10,
-            }}
-          >
-            <View style={{ flex: 1, alignSelf: "stretch" }}>
-              <Text style={{ fontWeight: "bold" }}>Request</Text>
-            </View>
-            <View style={{ flex: 1, alignSelf: "stretch" }}>
-              <Text style={{ fontWeight: "bold" }}>Offer</Text>
-            </View>
+    return allTransactions.length > 0 ? (
+      <>
+        <Text style={{ fontSize: 24, marginBottom: 10 }}>
+          Admins Only - All Transactions
+        </Text>
+        <View
+          style={{
+            width: "100%",
+            flex: 1,
+            alignSelf: "stretch",
+            flexDirection: "row",
+            marginBottom: 10,
+          }}
+        >
+          <View style={{ flex: 1, alignSelf: "stretch" }}>
+            <Text style={{ fontWeight: "bold" }}>Request</Text>
           </View>
-          {allTransactions?.map((transaction) => (
-            <>
-              <View
-                style={{
-                  width: "100%",
-                  flex: 1,
-                  alignSelf: "stretch",
-                  flexDirection: "row",
-                  marginBottom: 10,
-                }}
-                key={transaction.idtransactions}
-              >
-                <View style={{ flex: 1, alignSelf: "stretch" }}>
-                  <Text>
-                    {transaction.quant_1} x {transaction.prod_1} (Val.{" "}
-                    {transaction.value_1})
-                  </Text>
-                </View>
-                <View style={{ flex: 1, alignSelf: "stretch" }}>
-                  <Text>
-                    {transaction.quant_2} x {transaction.prod_2} (Val.{" "}
-                    {transaction.value_2})
-                  </Text>
-                </View>
+          <View style={{ flex: 1, alignSelf: "stretch" }}>
+            <Text style={{ fontWeight: "bold" }}>Offer</Text>
+          </View>
+        </View>
+        {allTransactions?.map((transaction) => (
+          <>
+            <View
+              style={{
+                width: "100%",
+                flex: 1,
+                alignSelf: "stretch",
+                flexDirection: "row",
+                marginBottom: 10,
+              }}
+              key={transaction.idtransactions}
+            >
+              <View style={{ flex: 1, alignSelf: "stretch" }}>
+                <Text>
+                  {transaction.quant_1} x {transaction.prod_1} (Val.{" "}
+                  {transaction.value_1})
+                </Text>
               </View>
-              <Text>{"\n"}</Text>
-            </>
-          ))}
-          ;
-        </>
-      )
-    );
+              <View style={{ flex: 1, alignSelf: "stretch" }}>
+                <Text>
+                  {transaction.quant_2} x {transaction.prod_2} (Val.{" "}
+                  {transaction.value_2})
+                </Text>
+              </View>
+            </View>
+            <Text>{"\n"}</Text>
+          </>
+        ))}
+        ;
+      </>
+    ) : null;
   };
 
   useEffect(() => {
@@ -582,17 +565,17 @@ export default function Index() {
           }}
         >
           {/* Buttons for menu selection */}
-          {menuOpen === 0 && getUser() == null && (
+          {menuOpen === 0 && getUser() == null ? (
             <>
               <Text>{"\n"}</Text>
               <Button title="Register" onPress={() => setMenuOpen(1)}></Button>
               <Text>{"\n"}</Text>
               <Button title="Log In" onPress={() => setMenuOpen(2)}></Button>
             </>
-          )}
+          ) : null}
 
           {/* All registration components are in this section */}
-          {menuOpen === 1 && getUser() == null && (
+          {menuOpen === 1 && getUser() == null ? (
             <>
               <Text style={{ fontSize: 24 }}>Register</Text>
 
@@ -670,10 +653,10 @@ export default function Index() {
               <Text>{"\n"}</Text>
               <Button title="Log In" onPress={() => setMenuOpen(2)}></Button>
             </>
-          )}
+          ) : null}
 
           {/* All login components are in this section */}
-          {menuOpen === 2 && getUser() == null && (
+          {menuOpen === 2 && getUser() == null ? (
             <>
               <Text style={{ fontSize: 24 }}>Login</Text>
 
@@ -696,10 +679,10 @@ export default function Index() {
               <Text>{"\n"}</Text>
               <Button title="Register" onPress={() => setMenuOpen(1)}></Button>
             </>
-          )}
+          ) : null}
 
           {/* Logout and all display items */}
-          {getUser() != null && (
+          {getUser() != null ? (
             <View>
               <Button title="Logout" onPress={logout} />
               <OwnProducts />
@@ -708,7 +691,7 @@ export default function Index() {
               <ClosedTransactions />
               <AdminInfo />
             </View>
-          )}
+          ) : null}
         </View>
       </ScrollView>
     </SafeAreaView>

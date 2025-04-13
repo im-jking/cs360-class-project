@@ -59,6 +59,8 @@ export interface TransactionReadable {
   idtransactions: number;
   prod_1: string;
   prod_2: string;
+  id_1: number;
+  id_2: number;
   quant_1: number;
   quant_2: number;
   value_1: number;
