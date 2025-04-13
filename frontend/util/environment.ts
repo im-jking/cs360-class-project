@@ -12,3 +12,10 @@ export const setUser = (user: string | null) => {
 export const getUser = () => {
   return curUser;
 };
+
+export const checkAdmin = async (user: string) => {
+  const response = await fetch(`${HOST_WITH_PORT_API}/user`)
+    .then((response) => response.json())
+    .catch((error) => console.error("Error fetching user data:", error));
+  return response.is_admin ? true : false;
+};

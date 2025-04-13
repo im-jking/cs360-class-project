@@ -48,4 +48,20 @@ export interface TransactionInfo {
   hash_key: string;
   via_1: string;
   via_2: string;
+  quantity_1: number;
+  quantity_2: number;
+  value_1: number;
+  value_2: number;
+  is_active: boolean;
+}
+
+export interface TransactionReadable {
+  idtransactions: number;
+  prod_1: string;
+  prod_2: string;
+  quant_1: number;
+  quant_2: number;
+  value_1: number;
+  value_2: number;
+  is_active: boolean;
 }

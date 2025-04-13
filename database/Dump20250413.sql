@@ -67,9 +67,14 @@ CREATE TABLE `transactions` (
   `hash_key` varchar(45) NOT NULL,
   `via_1` varchar(45) DEFAULT NULL,
   `via_2` varchar(45) DEFAULT NULL,
+  `quantity_1` int DEFAULT NULL,
+  `quantity_2` int DEFAULT NULL,
+  `value_1` int DEFAULT NULL,
+  `value_2` int DEFAULT NULL,
+  `is_active` tinyint DEFAULT NULL,
   PRIMARY KEY (`idtransactions`),
   UNIQUE KEY `hash_key_UNIQUE` (`hash_key`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -78,7 +83,7 @@ CREATE TABLE `transactions` (
 
 LOCK TABLES `transactions` WRITE;
 /*!40000 ALTER TABLE `transactions` DISABLE KEYS */;
-INSERT INTO `transactions` VALUES (1,5,4,'Ian','Enoch','2025-04-12 16:01:56',NULL,'-5553377812316492326',NULL,NULL);
+INSERT INTO `transactions` VALUES (3,5,6,'Enoch','Ian','2025-04-13 09:14:04',NULL,'-4818210310649819394',NULL,NULL,20,7,60,56,NULL);
 /*!40000 ALTER TABLE `transactions` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -114,7 +119,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'Enoch',NULL,NULL,'Enoch','2088212650','420 s Asbury st #9','Moscow','Id',83843,'Myer9658@vandals.uidaho.edu',NULL),(3,'Ian',NULL,NULL,'asdf','5099999999','7717 W B Rd','Moscow','ID',83843,'Here@ian.com',NULL);
+INSERT INTO `users` VALUES (1,'Enoch',NULL,NULL,'Enoch','2088212650','420 s Asbury st #9','Moscow','Id',83843,'Myer9658@vandals.uidaho.edu',NULL),(3,'Ian',NULL,1,'asdf','5099999999','7717 W B Rd','Moscow','ID',83843,'Here@ian.com',NULL);
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -127,4 +132,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-04-12 16:10:58
+-- Dump completed on 2025-04-13  9:22:17

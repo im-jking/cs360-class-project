@@ -2,11 +2,22 @@ import { useEffect, useState } from "react";
 import { Button, SafeAreaView, ScrollView, Text, View } from "react-native";
 import { Input } from "@rneui/themed";
 
-import { RegistrationInfo, LoginInfo, ProductFinal } from "@/util/interface";
+import {
+  RegistrationInfo,
+  LoginInfo,
+  ProductFinal,
+  TransactionInfo,
+  TransactionReadable,
+} from "@/util/interface";
 import { parse } from "@babel/core";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 
-import { getUser, HOST_WITH_PORT_API, setUser } from "@/util/environment";
+import {
+  checkAdmin,
+  getUser,
+  HOST_WITH_PORT_API,
+  setUser,
+} from "@/util/environment";
 import { clearTokens, getToken, storeToken } from "@/util/credentials";
 import { useIsFocused } from "@react-navigation/native";
 
@@ -38,6 +49,24 @@ export default function Index() {
   //Current user's products
   const [ownProducts, setOwnProducts] = useState<ProductFinal[] | null>(null);
 
+  //Current user's open transactions
+  const [openTransactions, setOpenTransactions] = useState<
+    TransactionReadable[]
+  >([]);
+
+  //Current user's open requests
+  const [openRequests, setOpenRequests] = useState<TransactionReadable[]>([]);
+
+  //Current user's closed transactions
+  const [closedTransactions, setClosedTransactions] = useState<
+    TransactionReadable[]
+  >([]);
+
+  //All transactions, for admin view
+  const [allTransactions, setAllTransactions] = useState<TransactionReadable[]>(
+    []
+  );
+
   //Request current user's products and set them
   const getOwnProducts = async () => {
     await fetch(
@@ -52,6 +81,75 @@ export default function Index() {
     )
       .then((response) => response.json())
       .then((response) => setOwnProducts(response))
+      .catch((error) => console.error(error));
+  };
+
+  //Request open transactions and set them
+  const getOpenTransactions = async () => {
+    await fetch(
+      `${HOST_WITH_PORT_API}/transactions?username=${curLogInfo.username}&active_status=true&requested=false`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      }
+    )
+      .then((response) => response.json())
+      // .then((response) => console.log("Open transactions: ", response))
+      .then((response) => setOpenTransactions(response))
+      .catch((error) => console.error(error));
+  };
+
+  //Request open requests and set them
+  const getOpenRequests = async () => {
+    await fetch(
+      `${HOST_WITH_PORT_API}/transactions?username=${curLogInfo.username}&active_status=true&requested=true`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      }
+    )
+      .then((response) => response.json())
+      // .then((response) => console.log("Open requests: ", response))
+      .then((response) => setOpenRequests(response))
+      .catch((error) => console.error(error));
+  };
+
+  //Request closed transactions and set them
+  const getClosedTransactions = async () => {
+    await fetch(
+      `${HOST_WITH_PORT_API}/transactions?username=${curLogInfo.username}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      }
+    )
+      .then((response) => response.json())
+      // .then((response) => console.log("Closed transactions: ", response))
+      .then((response) => setClosedTransactions(response))
+      .catch((error) => console.error(error));
+  };
+
+  //Request admin info and set it
+  const getAdminInfo = async () => {
+    await fetch(`${HOST_WITH_PORT_API}/transactions`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
+    })
+      .then((response) => response.json())
+      // .then((response) => console.log("All transactions: ", response))
+      .then((response) => setAllTransactions(response))
       .catch((error) => console.error(error));
   };
 
@@ -84,14 +182,23 @@ export default function Index() {
       body: JSON.stringify(info),
     })
       .then((response) => response.json())
-      .then((response) => storeToken(info.username, response.access_token))
+      .then((response) => {
+        storeToken(info.username, response.access_token);
+      })
       .then(() => {
         storeToken("user", info.username);
         setUser(info.username);
         setCurLogInfo({ username: "", password: "" });
         getOwnProducts();
+        getOpenTransactions();
+        getOpenRequests();
+        getClosedTransactions();
       })
       .catch((error) => console.error("Login error:" + error));
+
+    checkAdmin(info.username)
+      .then((response) => (response ? getAdminInfo() : null))
+      .catch((error) => console.error("Admin check error:" + error));
   };
 
   const logout = async () => {
@@ -161,6 +268,232 @@ export default function Index() {
     );
   };
 
+  const OpenTransactions = () => {
+    return (
+      openTransactions.length > 0 && (
+        <>
+          <Text style={{ fontSize: 24, marginBottom: 10 }}>
+            Open Transactions
+          </Text>
+          <View
+            style={{
+              width: "100%",
+              flex: 1,
+              alignSelf: "stretch",
+              flexDirection: "row",
+              marginBottom: 10,
+            }}
+          >
+            <View style={{ flex: 1, alignSelf: "stretch" }}>
+              <Text style={{ fontWeight: "bold" }}>Request</Text>
+            </View>
+            <View style={{ flex: 1, alignSelf: "stretch" }}>
+              <Text style={{ fontWeight: "bold" }}>Offer</Text>
+            </View>
+          </View>
+          {openTransactions?.map((transaction) => (
+            <>
+              <View
+                style={{
+                  width: "100%",
+                  flex: 1,
+                  alignSelf: "stretch",
+                  flexDirection: "row",
+                  marginBottom: 10,
+                }}
+                key={transaction.idtransactions}
+              >
+                <View style={{ flex: 1, alignSelf: "stretch" }}>
+                  <Text>
+                    {transaction.quant_1} x {transaction.prod_1} (Val.{" "}
+                    {transaction.value_1})
+                  </Text>
+                </View>
+                <View style={{ flex: 1, alignSelf: "stretch" }}>
+                  <Text>
+                    {transaction.quant_2} x {transaction.prod_2} (Val.{" "}
+                    {transaction.value_2})
+                  </Text>
+                </View>
+              </View>
+              <Text>{"\n"}</Text>
+            </>
+          ))}
+          ;
+        </>
+      )
+    );
+  };
+
+  const OpenRequests = () => {
+    return (
+      openRequests.length > 0 && (
+        <>
+          <Text style={{ fontSize: 24, marginBottom: 10 }}>Open Requests</Text>
+          <View
+            style={{
+              width: "100%",
+              flex: 1,
+              alignSelf: "stretch",
+              flexDirection: "row",
+              marginBottom: 10,
+            }}
+          >
+            <View style={{ flex: 1, alignSelf: "stretch" }}>
+              <Text style={{ fontWeight: "bold" }}>Request</Text>
+            </View>
+            <View style={{ flex: 1, alignSelf: "stretch" }}>
+              <Text style={{ fontWeight: "bold" }}>Offer</Text>
+            </View>
+          </View>
+          {openRequests?.map((transaction) => (
+            <>
+              <View
+                style={{
+                  width: "100%",
+                  flex: 1,
+                  alignSelf: "stretch",
+                  flexDirection: "row",
+                  marginBottom: 10,
+                }}
+                key={transaction.idtransactions}
+              >
+                <View style={{ flex: 1, alignSelf: "stretch" }}>
+                  <Text>
+                    {transaction.quant_1} x {transaction.prod_1} (Val.{" "}
+                    {transaction.value_1})
+                  </Text>
+                </View>
+                <View style={{ flex: 1, alignSelf: "stretch" }}>
+                  <Text>
+                    {transaction.quant_2} x {transaction.prod_2} (Val.{" "}
+                    {transaction.value_2})
+                  </Text>
+                </View>
+              </View>
+              <Text>{"\n"}</Text>
+            </>
+          ))}
+          ;
+        </>
+      )
+    );
+  };
+
+  const ClosedTransactions = () => {
+    return (
+      closedTransactions.length > 0 && (
+        <>
+          <Text style={{ fontSize: 24, marginBottom: 10 }}>
+            Closed Transactions
+          </Text>
+          <View
+            style={{
+              width: "100%",
+              flex: 1,
+              alignSelf: "stretch",
+              flexDirection: "row",
+              marginBottom: 10,
+            }}
+          >
+            <View style={{ flex: 1, alignSelf: "stretch" }}>
+              <Text style={{ fontWeight: "bold" }}>Request</Text>
+            </View>
+            <View style={{ flex: 1, alignSelf: "stretch" }}>
+              <Text style={{ fontWeight: "bold" }}>Offer</Text>
+            </View>
+          </View>
+          {closedTransactions?.map((transaction) => (
+            <>
+              <View
+                style={{
+                  width: "100%",
+                  flex: 1,
+                  alignSelf: "stretch",
+                  flexDirection: "row",
+                  marginBottom: 10,
+                }}
+                key={transaction.idtransactions}
+              >
+                <View style={{ flex: 1, alignSelf: "stretch" }}>
+                  <Text>
+                    {transaction.quant_1} x {transaction.prod_1} (Val.{" "}
+                    {transaction.value_1})
+                  </Text>
+                </View>
+                <View style={{ flex: 1, alignSelf: "stretch" }}>
+                  <Text>
+                    {transaction.quant_2} x {transaction.prod_2} (Val.{" "}
+                    {transaction.value_2})
+                  </Text>
+                </View>
+              </View>
+              <Text>{"\n"}</Text>
+            </>
+          ))}
+          ;
+        </>
+      )
+    );
+  };
+
+  const AdminInfo = () => {
+    return (
+      allTransactions.length > 0 && (
+        <>
+          <Text style={{ fontSize: 24, marginBottom: 10 }}>
+            Admins Only - All Transactions
+          </Text>
+          <View
+            style={{
+              width: "100%",
+              flex: 1,
+              alignSelf: "stretch",
+              flexDirection: "row",
+              marginBottom: 10,
+            }}
+          >
+            <View style={{ flex: 1, alignSelf: "stretch" }}>
+              <Text style={{ fontWeight: "bold" }}>Request</Text>
+            </View>
+            <View style={{ flex: 1, alignSelf: "stretch" }}>
+              <Text style={{ fontWeight: "bold" }}>Offer</Text>
+            </View>
+          </View>
+          {allTransactions?.map((transaction) => (
+            <>
+              <View
+                style={{
+                  width: "100%",
+                  flex: 1,
+                  alignSelf: "stretch",
+                  flexDirection: "row",
+                  marginBottom: 10,
+                }}
+                key={transaction.idtransactions}
+              >
+                <View style={{ flex: 1, alignSelf: "stretch" }}>
+                  <Text>
+                    {transaction.quant_1} x {transaction.prod_1} (Val.{" "}
+                    {transaction.value_1})
+                  </Text>
+                </View>
+                <View style={{ flex: 1, alignSelf: "stretch" }}>
+                  <Text>
+                    {transaction.quant_2} x {transaction.prod_2} (Val.{" "}
+                    {transaction.value_2})
+                  </Text>
+                </View>
+              </View>
+              <Text>{"\n"}</Text>
+            </>
+          ))}
+          ;
+        </>
+      )
+    );
+  };
+
   useEffect(() => {
     // Check if user is logged in
     const user = getUser();
@@ -168,6 +501,12 @@ export default function Index() {
       setCurLogInfo({ username: user, password: "" });
       setMenuOpen(0);
       getOwnProducts();
+      getOpenTransactions();
+      getOpenRequests();
+      getClosedTransactions();
+      checkAdmin(user)
+        .then((response) => (response ? getAdminInfo() : null))
+        .catch((error) => console.error("Admin check error:" + error));
     }
   }, [isFocused]);
 
@@ -299,11 +638,15 @@ export default function Index() {
             </>
           )}
 
-          {/* Logout and own products components */}
+          {/* Logout and all display items */}
           {getUser() != null && (
             <View>
               <Button title="Logout" onPress={logout} />
               <OwnProducts />
+              <OpenTransactions />
+              <OpenRequests />
+              <ClosedTransactions />
+              <AdminInfo />
             </View>
           )}
         </View>

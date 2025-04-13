@@ -10,7 +10,7 @@ from jwt.exceptions import InvalidTokenError
 from passlib.context import CryptContext
 import db
 from db import engine, local_session
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import exists
 from pydantic import BaseModel
@@ -78,6 +78,10 @@ class TransactionInfo(BaseModel):
     hash_key: str | None = None
     via_1: str | None = None
     via_2: str | None = None
+    quantity_1: int | None = None
+    quantity_2: int | None = None
+    value_1: int | None = None
+    value_2: int | None = None
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -212,7 +216,6 @@ async def get_products():
             products_arr.append(next_prod)
         return products_arr
 
-
 #Add products for sale
 @app.post("/products")
 async def add_product(product_info: ProductInfo):
@@ -227,6 +230,16 @@ async def add_product(product_info: ProductInfo):
         session.add(new_product)
         session.commit()
 
+#Get a specific user
+@app.post("/user")
+async def get_user(username: str):
+    with local_session() as session:
+        statement = select(db.User).filter_by(username=username)
+        user = session.scalars(statement).first()
+        if user is None:
+            raise HTTPException(status_code=404, detail="User not found")
+        return vars(user)
+
 #Get a specific user's products
 @app.post("/user_products")
 async def get_user_products(username: str):
@@ -236,15 +249,74 @@ async def get_user_products(username: str):
         return products
     
 @app.get("/transactions")
-async def get_transactions():
-    with local_session as session:
-        transactions = session.query(db.Transactions).all()
-        transactions_arr = []
+async def get_transactions(username: str | None = None, active_status: bool | None = None, requested: bool | None = None):
+    username = False if username is None else username
+    active_status = False if active_status is None else active_status
+    requested = False if requested is None else requested
+
+    transactions_arr = []
+    with local_session() as session:
+        if not username and not active_status:
+            transactions = session.query(db.Transactions).all()
+        elif not username:
+            statement = select(db.Transactions).filter_by(is_active=active_status)
+            transactions = session.scalars(statement).all()
+        elif active_status:
+            if requested:
+                statement = select(db.Transactions).filter(
+                    or_(
+                        db.Transactions.party_1 == username,
+                        db.Transactions.via_1 == username
+                    )
+                )
+            else:
+                statement = select(db.Transactions).filter(
+                    or_(
+                        db.Transactions.party_2 == username,
+                        db.Transactions.via_2 == username
+                    )
+                )
+            transactions = session.scalars(statement).all()
+        else:
+            statement = select(db.Transactions).filter(
+                or_(
+                    db.Transactions.party_1 == username,
+                    db.Transactions.party_2 == username,
+                    db.Transactions.via_1 == username,
+                    db.Transactions.via_2 == username
+                ),
+                db.Transactions.is_active == active_status
+            )
+            transactions = session.scalars(statement).all()
+
         for transaction in transactions:
             next_transaction = vars(transaction)
             next_transaction.pop('_sa_instance_state')
-            transactions_arr.append(next_transaction)
-        return transactions_arr
+
+            #Get product names
+            statement = select(db.Products).filter_by(idProducts=next_transaction["item_exchanged_1"])
+            product_1 = session.scalars(statement).first()
+            if product_1 is None:
+                raise HTTPException(status_code=404, detail="Product not found")
+            prod_name_1 = product_1.prodName
+            statement = select(db.Products).filter_by(idProducts=next_transaction["item_exchanged_2"])
+            product_2 = session.scalars(statement).first()
+            if product_2 is None:
+                raise HTTPException(status_code=404, detail="Product not found")
+            prod_name_2 = product_2.prodName
+
+            read_transaction = {
+                "idtransactions": next_transaction["idtransactions"],
+                "prod_1": prod_name_1,
+                "prod_2": prod_name_2,
+                "quant_1": next_transaction["quantity_1"],
+                "quant_2": next_transaction["quantity_2"],
+                "value_1": next_transaction["value_1"],
+                "value_2": next_transaction["value_2"],
+                "is_active": next_transaction["is_active"],
+            }
+            transactions_arr.append(read_transaction)
+    return transactions_arr
     
 @app.post("/transactions")
 async def add_transaction(transaction_info: TransactionInfo):

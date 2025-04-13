@@ -65,13 +65,19 @@ export default function Index() {
   //Create a transaction on the database with populated info
   const sendBarter = async () => {
     if (selectedProduct && selectedOffer) {
+      //EDIT BELOW IF ROUTED THROUGH MIDDLE MEN
       const barterInfo = {
         item_exchanged_1: selectedProduct.prod.idProducts,
         item_exchanged_2: selectedOffer.prod.idProducts,
-        party_1: getUser(),
-        party_2: selectedProduct.prod.posted_by,
-        // via_1: "goods",
-        // via_2: "goods",
+        party_1: selectedProduct.prod.posted_by,
+        party_2: getUser(),
+        // via_1: null,
+        // via_2: null,
+        quantity_1: selectedProduct.quant,
+        quantity_2: selectedOffer.quant,
+        value_1: selectedProduct.prod.price * selectedProduct.quant,
+        value_2: selectedOffer.prod.price * selectedOffer.quant,
+        is_active: true,
       };
 
       console.log(barterInfo);

@@ -53,3 +53,8 @@ class Transactions(base):
     hash_key = Column(String(45), nullable=True, unique=True)
     via_1 = Column(String(45), nullable=True)
     via_2 = Column(String(45), nullable=True)
+    quantity_1 = Column(Integer, nullable=True)
+    quantity_2 = Column(Integer, nullable=True)
+    value_1 = Column(Integer, nullable=True)
+    value_2 = Column(Integer, nullable=True)
+    is_active = Column(Boolean, nullable=True)
