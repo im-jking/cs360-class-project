@@ -10,7 +10,7 @@ from jwt.exceptions import InvalidTokenError
 from passlib.context import CryptContext
 import db
 from db import engine, local_session
-from sqlalchemy import select, or_
+from sqlalchemy import select, or_, update, delete
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import exists
 from pydantic import BaseModel
@@ -267,14 +267,16 @@ async def get_transactions(username: str | None = None, active_status: bool | No
                     or_(
                         db.Transactions.party_1 == username,
                         db.Transactions.via_1 == username
-                    )
+                    ),
+                    db.Transactions.is_active == active_status
                 )
             else:
                 statement = select(db.Transactions).filter(
                     or_(
                         db.Transactions.party_2 == username,
                         db.Transactions.via_2 == username
-                    )
+                    ),
+                    db.Transactions.is_active == active_status
                 )
             transactions = session.scalars(statement).all()
         else:
@@ -330,3 +332,23 @@ async def add_transaction(transaction_info: TransactionInfo):
         new_trans = db.Transactions(**trans_info)
         session.add(new_trans)
         session.commit()
+    return {"message": "Transaction added successfully"}
+
+@app.post("/accept_transaction")
+async def accept_transaction(trans_id: int):
+    with local_session() as session:
+        dt_finished = str(datetime.now())
+        query = update(db.Transactions).values({"date_ended": dt_finished, "is_active": 0}).where(db.Transactions.idtransactions == trans_id)
+        # session.scalars(query).all()
+        session.execute(query)
+        session.commit()
+    return {"message": "Transaction updated successfully"}
+
+@app.post("/delete_transaction")
+async def delete_transaction(trans_id: int):
+    with local_session() as session:
+        query = delete(db.Transactions).where(db.Transactions.idtransactions == trans_id)
+        # session.scalars(query).all()
+        session.execute(query)
+        session.commit()
+    return {"message": "Transaction deleted successfully"} 

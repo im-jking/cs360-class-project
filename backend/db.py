@@ -57,4 +57,4 @@ class Transactions(base):
     quantity_2 = Column(Integer, nullable=True)
     value_1 = Column(Integer, nullable=True)
     value_2 = Column(Integer, nullable=True)
-    is_active = Column(Boolean, nullable=True)
+    is_active = Column(Boolean, nullable=False, default=True)

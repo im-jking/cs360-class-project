@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { Button, SafeAreaView, ScrollView, Text, View } from "react-native";
+import {
+  Button,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 import { Input } from "@rneui/themed";
 
 import {
@@ -139,18 +146,24 @@ export default function Index() {
   };
 
   //Request admin info and set it
-  const getAdminInfo = async () => {
-    await fetch(`${HOST_WITH_PORT_API}/transactions`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
-    })
-      .then((response) => response.json())
-      // .then((response) => console.log("All transactions: ", response))
-      .then((response) => setAllTransactions(response))
-      .catch((error) => console.error(error));
+  const getAdminInfo = async (user: string) => {
+    const isAdmin = await checkAdmin(user);
+
+    if (isAdmin) {
+      await fetch(`${HOST_WITH_PORT_API}/transactions`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      })
+        .then((response) => response.json())
+        // .then((response) => console.log("All transactions: ", response))
+        .then((response) => setAllTransactions(response))
+        .catch((error) => console.error(error));
+    } else {
+      setAllTransactions([]);
+    }
   };
 
   //Register a new user through the backend
@@ -196,15 +209,45 @@ export default function Index() {
       })
       .catch((error) => console.error("Login error:" + error));
 
-    checkAdmin(info.username)
-      .then((response) => (response ? getAdminInfo() : null))
-      .catch((error) => console.error("Admin check error:" + error));
+    getAdminInfo(info.username);
   };
 
   const logout = async () => {
     await clearTokens();
     setUser(null);
     setCurLogInfo({ username: "", password: "" });
+  };
+
+  const acceptTrans = async (accept: boolean, this_id: number) => {
+    if (accept) {
+      await fetch(
+        `${HOST_WITH_PORT_API}/accept_transaction?trans_id=${this_id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        }
+      )
+        .then((response) => response.json())
+        .then((response) => console.log(response))
+        .catch((error) => console.error("Accept transaction error: " + error));
+    } else {
+      await fetch(
+        `${HOST_WITH_PORT_API}/delete_transaction?trans_id=${this_id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        }
+      )
+        .then((response) => response.json())
+        .then((response) => console.log(response))
+        .catch((error) => console.error("Delete transaction error: " + error));
+    }
   };
 
   const bottomBarHeight = useBottomTabBarHeight();
@@ -345,6 +388,7 @@ export default function Index() {
             <View style={{ flex: 1, alignSelf: "stretch" }}>
               <Text style={{ fontWeight: "bold" }}>Offer</Text>
             </View>
+            <View style={{ flex: 1, alignSelf: "stretch" }}></View>
           </View>
           {openRequests?.map((transaction) => (
             <>
@@ -369,6 +413,24 @@ export default function Index() {
                     {transaction.quant_2} x {transaction.prod_2} (Val.{" "}
                     {transaction.value_2})
                   </Text>
+                </View>
+                <View style={{ flex: 1, alignSelf: "stretch" }}>
+                  <Pressable
+                    onPress={() =>
+                      acceptTrans(true, transaction.idtransactions)
+                    }
+                  >
+                    <Text style={{ color: "blue" }}>Accept</Text>
+                  </Pressable>
+                </View>
+                <View>
+                  <Pressable
+                    onPress={() =>
+                      acceptTrans(false, transaction.idtransactions)
+                    }
+                  >
+                    <Text style={{ color: "red" }}>Decline</Text>
+                  </Pressable>
                 </View>
               </View>
               <Text>{"\n"}</Text>
@@ -504,9 +566,7 @@ export default function Index() {
       getOpenTransactions();
       getOpenRequests();
       getClosedTransactions();
-      checkAdmin(user)
-        .then((response) => (response ? getAdminInfo() : null))
-        .catch((error) => console.error("Admin check error:" + error));
+      getAdminInfo(user);
     }
   }, [isFocused]);
 

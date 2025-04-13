@@ -14,8 +14,15 @@ export const getUser = () => {
 };
 
 export const checkAdmin = async (user: string) => {
-  const response = await fetch(`${HOST_WITH_PORT_API}/user`)
+  const response = await fetch(`${HOST_WITH_PORT_API}/user?username=${user}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+    },
+  })
     .then((response) => response.json())
+    // .then((response) => console.log(response))
     .catch((error) => console.error("Error fetching user data:", error));
-  return response.is_admin ? true : false;
+  return response.is_admin;
 };
