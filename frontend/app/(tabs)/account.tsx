@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
   Button,
+  Modal,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -15,6 +16,7 @@ import {
   ProductFinal,
   TransactionInfo,
   TransactionReadable,
+  UserInfo,
 } from "@/util/interface";
 import { parse } from "@babel/core";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -73,6 +75,20 @@ export default function Index() {
   const [allTransactions, setAllTransactions] = useState<TransactionReadable[]>(
     []
   );
+
+  //Whether and which user modal is open
+  const [userModal, setUserModal] = useState<UserInfo | null>(null);
+
+  //Whether and which transaction modal is open
+  const [transModal, setTransModal] = useState<TransactionReadable | null>(
+    null
+  );
+
+  const [transModalEvil, setTransModalEvil] = useState<TransactionInfo | null>(
+    null
+  );
+
+  const [users, setUsers] = useState<UserInfo[]>([]);
 
   //Request current user's products and set them
   const getOwnProducts = async () => {
@@ -161,9 +177,44 @@ export default function Index() {
         // .then((response) => console.log("All transactions: ", response))
         .then((response) => setAllTransactions(response))
         .catch((error) => console.error(error));
+
+      await fetch(`${HOST_WITH_PORT_API}/users`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      })
+        .then((response) => response.json())
+        .then((response) => setUsers(response))
+        .catch((error) => console.error(error));
     } else {
       setAllTransactions([]);
+      setUsers([]);
     }
+  };
+
+  //Get original transaction data
+  const getTransactionEvil = async (transID: number) => {
+    await fetch(`${HOST_WITH_PORT_API}/og_transaction?trans_id=${transID}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
+    })
+      .then((response) => response.json())
+      .then((response) => setTransModalEvil(response))
+      .catch((error) => console.error(error));
+  };
+
+  //Get total value of all transactions
+  const getTotalValue = () => {
+    let totalValue = 0;
+    allTransactions.forEach((transaction) => {
+      totalValue += transaction.value_1 + transaction.value_2;
+    });
+    return totalValue;
   };
 
   //Register a new user through the backend
@@ -251,6 +302,45 @@ export default function Index() {
     }
   };
 
+  const approveUser = async (username: string) => {
+    await fetch(`${HOST_WITH_PORT_API}/approve_user?username=${username}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
+    })
+      .then((response) => response.json())
+      .then((response) => console.log(response))
+      .catch((error) => console.error("Error approving user: " + error));
+  };
+
+  const suspendUser = async (username: string) => {
+    await fetch(`${HOST_WITH_PORT_API}/suspend_user?username=${username}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
+    })
+      .then((response) => response.json())
+      .then((response) => console.log(response))
+      .catch((error) => console.error("Error suspending user: " + error));
+  };
+
+  const deleteUser = async (username: string) => {
+    await fetch(`${HOST_WITH_PORT_API}/delete_user?username=${username}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
+    })
+      .then((response) => response.json())
+      .then((response) => console.log(response))
+      .catch((error) => console.error("Error deleting user: " + error));
+  };
+
   const bottomBarHeight = useBottomTabBarHeight();
 
   const OwnProducts = () => {
@@ -333,7 +423,7 @@ export default function Index() {
           </View>
         </View>
         {openTransactions?.map((transaction) => (
-          <>
+          <React.Fragment key={transaction.idtransactions}>
             <View
               style={{
                 width: "100%",
@@ -358,9 +448,8 @@ export default function Index() {
               </View>
             </View>
             <Text>{"\n"}</Text>
-          </>
+          </React.Fragment>
         ))}
-        ;
       </>
     ) : null;
   };
@@ -387,7 +476,7 @@ export default function Index() {
           <View style={{ flex: 1, alignSelf: "stretch" }}></View>
         </View>
         {openRequests?.map((transaction) => (
-          <>
+          <React.Fragment key={transaction.idtransactions}>
             <View
               style={{
                 width: "100%",
@@ -422,9 +511,8 @@ export default function Index() {
               </View>
             </View>
             <Text>{"\n"}</Text>
-          </>
+          </React.Fragment>
         ))}
-        ;
       </>
     ) : null;
   };
@@ -452,7 +540,7 @@ export default function Index() {
           </View>
         </View>
         {closedTransactions?.map((transaction) => (
-          <>
+          <React.Fragment key={transaction.idtransactions}>
             <View
               style={{
                 width: "100%",
@@ -477,37 +565,25 @@ export default function Index() {
               </View>
             </View>
             <Text>{"\n"}</Text>
-          </>
+          </React.Fragment>
         ))}
-        ;
       </>
     ) : null;
   };
 
   const AdminInfo = () => {
-    return allTransactions.length > 0 ? (
+    return (
       <>
-        <Text style={{ fontSize: 24, marginBottom: 10 }}>
-          Admins Only - All Transactions
-        </Text>
-        <View
-          style={{
-            width: "100%",
-            flex: 1,
-            alignSelf: "stretch",
-            flexDirection: "row",
-            marginBottom: 10,
-          }}
-        >
-          <View style={{ flex: 1, alignSelf: "stretch" }}>
-            <Text style={{ fontWeight: "bold" }}>Request</Text>
-          </View>
-          <View style={{ flex: 1, alignSelf: "stretch" }}>
-            <Text style={{ fontWeight: "bold" }}>Offer</Text>
-          </View>
-        </View>
-        {allTransactions?.map((transaction) => (
+        {allTransactions.length > 0 || users.length > 0 ? (
+          <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10 }}>
+            Admin Dashboard
+          </Text>
+        ) : null}
+        {allTransactions.length > 0 ? (
           <>
+            <Text style={{ fontSize: 20, marginBottom: 10 }}>
+              All Transactions
+            </Text>
             <View
               style={{
                 width: "100%",
@@ -516,27 +592,236 @@ export default function Index() {
                 flexDirection: "row",
                 marginBottom: 10,
               }}
-              key={transaction.idtransactions}
             >
               <View style={{ flex: 1, alignSelf: "stretch" }}>
-                <Text>
-                  {transaction.quant_1} x {transaction.prod_1} (Val.{" "}
-                  {transaction.value_1})
-                </Text>
+                <Text style={{ fontWeight: "bold" }}>Request</Text>
               </View>
               <View style={{ flex: 1, alignSelf: "stretch" }}>
-                <Text>
-                  {transaction.quant_2} x {transaction.prod_2} (Val.{" "}
-                  {transaction.value_2})
-                </Text>
+                <Text style={{ fontWeight: "bold" }}>Offer</Text>
               </View>
             </View>
-            <Text>{"\n"}</Text>
+            {allTransactions?.map((transaction) => (
+              <React.Fragment key={transaction.idtransactions}>
+                <View
+                  style={{
+                    width: "100%",
+                    flex: 1,
+                    alignSelf: "stretch",
+                    flexDirection: "row",
+                    marginBottom: 10,
+                  }}
+                  key={transaction.idtransactions}
+                >
+                  <View style={{ flex: 1, alignSelf: "stretch" }}>
+                    <Text>
+                      {transaction.quant_1} x {transaction.prod_1} (Val.{" "}
+                      {transaction.value_1})
+                    </Text>
+                  </View>
+                  <View style={{ flex: 1, alignSelf: "stretch" }}>
+                    <Text>
+                      {transaction.quant_2} x {transaction.prod_2} (Val.{" "}
+                      {transaction.value_2})
+                    </Text>
+                  </View>
+                  <View style={{ flex: 1, alignSelf: "stretch" }}>
+                    <Pressable
+                      onPress={() => {
+                        getTransactionEvil(transaction.idtransactions);
+                        setTransModal(transaction);
+                      }}
+                    >
+                      <Text style={{ color: "blue" }}>View</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              </React.Fragment>
+            ))}
+            <Text style={{ fontWeight: "bold", marginBottom: 10 }}>
+              Total Value Traded = {getTotalValue()}
+            </Text>
           </>
-        ))}
-        ;
+        ) : null}
+
+        {users.length > 0 ? (
+          <>
+            <Text style={{ fontSize: 20, marginBottom: 10 }}>Users</Text>
+            {users.map((user) => (
+              <React.Fragment key={user.username}>
+                <View
+                  style={{
+                    width: "100%",
+                    flex: 1,
+                    // alignSelf: "stretch",
+                    flexDirection: "row",
+                    marginBottom: 5,
+                  }}
+                >
+                  <View style={{ flex: 1, marginBottom: 10 }}>
+                    <Text>{user.username}</Text>
+                  </View>
+                  <Pressable onPress={() => setUserModal(user)}>
+                    <Text style={{ color: "blue" }}>View Account</Text>
+                  </Pressable>
+                </View>
+              </React.Fragment>
+            ))}
+          </>
+        ) : null}
       </>
-    ) : null;
+    );
+  };
+
+  const UserModal = () => {
+    return (
+      <Modal transparent visible={userModal !== null}>
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+          }}
+        >
+          <View
+            style={{
+              width: "80%",
+              backgroundColor: "white",
+              borderRadius: 10,
+              padding: 20,
+            }}
+          >
+            <Text style={{ fontSize: 24, marginBottom: 10 }}>
+              {userModal?.username}
+            </Text>
+            <Text style={{ marginBottom: 5 }}>
+              <Text style={{ fontWeight: "bold" }}>Phone #: </Text>
+              {userModal?.phone_num}
+            </Text>
+            <Text style={{ marginBottom: 5 }}>
+              <Text style={{ fontWeight: "bold" }}>Street Address: </Text>
+              {userModal?.street_num}
+            </Text>
+            <Text style={{ marginBottom: 5 }}>
+              <Text style={{ fontWeight: "bold" }}>City: </Text>{" "}
+              {userModal?.city}
+            </Text>
+            <Text style={{ marginBottom: 5 }}>
+              <Text style={{ fontWeight: "bold" }}>State: </Text>{" "}
+              {userModal?.state}
+            </Text>
+            <Text style={{ marginBottom: 5 }}>
+              <Text style={{ fontWeight: "bold" }}>ZIP Code: </Text>{" "}
+              {userModal?.zip_code}
+            </Text>
+            <Text style={{ marginBottom: 5 }}>
+              <Text style={{ fontWeight: "bold" }}>Email Address: </Text>{" "}
+              {userModal?.email}
+            </Text>
+            <View
+              style={{ flexDirection: "row", justifyContent: "space-between" }}
+            >
+              <Pressable onPress={() => setUserModal(null)}>
+                <Text style={{ color: "blue" }}>Close</Text>
+              </Pressable>
+              {userModal?.is_approved ? (
+                <Pressable onPress={() => suspendUser(userModal?.username)}>
+                  <Text style={{ color: "orange" }}>Suspend</Text>
+                </Pressable>
+              ) : (
+                <Pressable
+                  onPress={() => approveUser(userModal?.username as string)}
+                >
+                  <Text style={{ color: "green" }}>Approve</Text>
+                </Pressable>
+              )}
+              <Pressable
+                onPress={() => deleteUser(userModal?.username as string)}
+              >
+                <Text style={{ color: "red" }}>Delete</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
+  const TransModal = () => {
+    return (
+      <Modal transparent visible={transModal !== null}>
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+          }}
+        >
+          <View
+            style={{
+              width: "80%",
+              backgroundColor: "white",
+              borderRadius: 10,
+              padding: 20,
+            }}
+          >
+            <Text style={{ fontSize: 24, marginBottom: 10 }}>
+              Transaction #{transModal?.idtransactions}
+            </Text>
+            <Text style={{ marginBottom: 5 }}>
+              <Text style={{ fontWeight: "bold" }}>Items exchanged:</Text>
+              <View
+                style={{
+                  width: "100%",
+                  flex: 1,
+                  alignSelf: "stretch",
+                  flexDirection: "row",
+                  marginBottom: 10,
+                }}
+                key={transModal?.idtransactions}
+              >
+                <View style={{ flex: 1, alignSelf: "stretch" }}>
+                  <Text>
+                    {transModal?.quant_1} x {transModal?.prod_1} (Val.{" "}
+                    {transModal?.value_1})
+                  </Text>
+                </View>
+                <View style={{ flex: 1, alignSelf: "stretch" }}>
+                  <Text>
+                    {transModal?.quant_2} x {transModal?.prod_2} (Val.{" "}
+                    {transModal?.value_2})
+                  </Text>
+                </View>
+              </View>
+            </Text>
+            {transModalEvil ? (
+              <>
+                <Text style={{ marginBottom: 5 }}>
+                  <Text style={{ fontWeight: "bold" }}>Parties: </Text>
+                  {transModalEvil.party_1} and {transModalEvil.party_2}
+                </Text>
+                <Text style={{ marginBottom: 5 }}>
+                  <Text style={{ fontWeight: "bold" }}>Date Started: </Text>
+                  {transModalEvil.date_started}
+                </Text>
+                <Text style={{ marginBottom: 5 }}>
+                  <Text style={{ fontWeight: "bold" }}>Date Ended: </Text>
+                  {transModalEvil.date_ended}
+                </Text>
+                <Text style={{ marginBottom: 5 }}>
+                  <Text style={{ fontWeight: "bold" }}>Hash Key: </Text>
+                  {transModalEvil.hash_key}
+                </Text>
+              </>
+            ) : null}
+            <Pressable onPress={() => setTransModal(null)}>
+              <Text style={{ color: "blue" }}>Close</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+    );
   };
 
   useEffect(() => {
@@ -552,6 +837,7 @@ export default function Index() {
       getAdminInfo(user);
     }
   }, [isFocused]);
+  8;
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -690,6 +976,8 @@ export default function Index() {
               <OpenRequests />
               <ClosedTransactions />
               <AdminInfo />
+              <UserModal />
+              <TransModal />
             </View>
           ) : null}
         </View>

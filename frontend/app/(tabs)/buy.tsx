@@ -1,5 +1,5 @@
 import { getToken } from "@/util/credentials";
-import { getUser, HOST_WITH_PORT_API } from "@/util/environment";
+import { getApproved, getUser, HOST_WITH_PORT_API } from "@/util/environment";
 import { ProductFinal } from "@/util/interface";
 import { useIsFocused } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
@@ -11,6 +11,7 @@ import {
   TextInput,
 } from "react-native";
 import { SafeAreaView, ScrollView, Text, View } from "react-native";
+import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 
 export default function Index() {
   const [products, setProducts] = useState<ProductFinal[] | null>(null);
@@ -19,6 +20,7 @@ export default function Index() {
   const [bartInfo, setBartInfo] = useState<ProductFinal | null>(null);
   const [offerInfo, setOfferInfo] = useState<ProductFinal | null>(null);
   const [offerSelected, setOfferSelected] = useState(false);
+  const [requestOpen, setRequestOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<{
     prod: ProductFinal;
     quant: number;
@@ -26,6 +28,7 @@ export default function Index() {
   const [selectedOffer, setSelectedOffer] = useState<{
     prod: ProductFinal;
     quant: number;
+    borrowed: boolean;
   } | null>(null);
 
   const isFocused = useIsFocused();
@@ -70,9 +73,11 @@ export default function Index() {
         item_exchanged_1: selectedProduct.prod.idProducts,
         item_exchanged_2: selectedOffer.prod.idProducts,
         party_1: selectedProduct.prod.posted_by,
-        party_2: getUser(),
+        party_2: selectedOffer.borrowed
+          ? selectedOffer.prod.posted_by
+          : getUser(),
         // via_1: null,
-        // via_2: null,
+        via_2: selectedOffer.borrowed ? getUser() : null,
         quantity_1: selectedProduct.quant,
         quantity_2: selectedOffer.quant,
         value_1: selectedProduct.prod.price * selectedProduct.quant,
@@ -173,7 +178,7 @@ export default function Index() {
             <Text
               style={{ fontWeight: "bold", textDecorationLine: "underline" }}
             >
-              Est. Value (USD)
+              Value
             </Text>
           </View>
           <View style={{ flex: 1, alignSelf: "stretch" }}>
@@ -426,7 +431,9 @@ export default function Index() {
               </>
             ) : null}
 
-            <Text style={{ fontWeight: "bold" }}>Your Offer:</Text>
+            <Text style={{ fontWeight: "bold" }}>
+              Your Offer{selectedOffer?.borrowed ? " (borrowed)" : null}:
+            </Text>
 
             {selectedOffer ? (
               <View style={{ marginBottom: 10 }}>
@@ -435,6 +442,7 @@ export default function Index() {
                   {selectedOffer.prod.prodName} (Total Value{" "}
                   {selectedOffer.prod.price * selectedOffer.quant})
                 </Text>
+                {/* {selectedOffer.borrowed ? <Text>{"\n"}Borrowed</Text> : null} */}
               </View>
             ) : (
               <View style={{ flexDirection: "row", marginBottom: 10 }}>
@@ -455,13 +463,15 @@ export default function Index() {
                 >
                   <Text style={{ color: "white" }}>Choose Goods</Text>
                 </Pressable>
-                {/*  TO CHANGE: OPEN MENU OF OTHERS' RESOURCES */}
                 <Pressable
                   style={[
                     { padding: 10, borderRadius: 10, elevation: 2 },
                     { backgroundColor: "#c5c5c5" },
                   ]}
-                  onPress={() => setOfferInfo(null)}
+                  onPress={() => {
+                    setOfferInfo(null);
+                    setRequestOpen(true);
+                  }}
                 >
                   <Text style={{ color: "white" }}>Request Goods</Text>
                 </Pressable>
@@ -608,7 +618,11 @@ export default function Index() {
                             : { backgroundColor: "#c5c5c5" },
                         ]}
                         onPress={() => {
-                          setSelectedOffer({ prod: product, quant: 1 });
+                          setSelectedOffer({
+                            prod: product,
+                            quant: 1,
+                            borrowed: false,
+                          });
                         }}
                       >
                         <Text style={{ color: "white" }}>Select</Text>
@@ -685,31 +699,240 @@ export default function Index() {
     );
   };
 
+  // Where the user requests someone else's goods
+  const RequestScreen = () => {
+    return (
+      <Modal
+        animationType="fade"
+        transparent
+        visible={requestOpen}
+        onRequestClose={() => setRequestOpen(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <View
+            style={{
+              margin: 5,
+              backgroundColor: "white",
+              borderRadius: 20,
+              padding: 35,
+              alignItems: "center",
+              shadowColor: "#000",
+              shadowOffset: {
+                width: 0,
+                height: 2,
+              },
+              shadowOpacity: 0.25,
+              shadowRadius: 4,
+              elevation: 5,
+            }}
+          >
+            <Text
+              style={{
+                textDecorationLine: "underline",
+                fontWeight: "bold",
+                marginBottom: 20,
+              }}
+            >
+              What do you want traded?
+            </Text>
+
+            <>
+              <View
+                style={{
+                  alignSelf: "stretch",
+                  flexDirection: "row",
+                }}
+              >
+                <View style={{ marginRight: 10 }}>
+                  <Text style={{ fontWeight: "bold" }}>Quant.</Text>
+                </View>
+                <View style={{ marginRight: 10 }}>
+                  <Text style={{ fontWeight: "bold" }}>Title</Text>
+                </View>
+                <View style={{ marginRight: 10 }}>
+                  <Text style={{ fontWeight: "bold" }}>Value</Text>
+                </View>
+                <View>
+                  <Pressable
+                    style={[
+                      {
+                        borderRadius: 10,
+                        padding: 5,
+                        elevation: 2,
+                        visibility: "hidden",
+                      },
+                    ]}
+                  >
+                    <Text style={{ color: "white" }}>Select</Text>
+                  </Pressable>
+                </View>
+              </View>
+            </>
+
+            <View>
+              {products?.map((product) => (
+                <React.Fragment key={product.idProducts}>
+                  <View
+                    style={{
+                      // width: "100%",
+                      // flex: 1,
+                      alignSelf: "stretch",
+                      flexDirection: "row",
+                      marginBottom: 10,
+                    }}
+                    key={product.idProducts}
+                  >
+                    <View style={{ marginRight: 10 }}>
+                      <Text>{product.quantity}</Text>
+                    </View>
+                    <View style={{ marginRight: 10 }}>
+                      <Text>{product.prodName}</Text>
+                    </View>
+                    <View style={{ marginRight: 10 }}>
+                      <Text>{product.price}</Text>
+                    </View>
+                    <View>
+                      <Pressable
+                        style={[
+                          {
+                            borderRadius: 10,
+                            padding: 5,
+                            elevation: 2,
+                          },
+                          selectedOffer?.prod.idProducts == product.idProducts
+                            ? { backgroundColor: "#1892ff" }
+                            : { backgroundColor: "#c5c5c5" },
+                        ]}
+                        onPress={() => {
+                          setSelectedOffer({
+                            prod: product,
+                            quant: 1,
+                            borrowed: true,
+                          });
+                        }}
+                      >
+                        <Text style={{ color: "white" }}>Select</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                  <Text>{"\n"}</Text>
+                </React.Fragment>
+              ))}
+            </View>
+
+            {selectedOffer ? (
+              <Text
+                style={{
+                  fontWeight: "bold",
+                  marginBottom: 10,
+                }}
+              >
+                Quantity:{"    "}
+                <TextInput
+                  keyboardType="numeric"
+                  defaultValue={
+                    selectedOffer ? selectedOffer?.quant.toString() : "0"
+                  }
+                  onEndEditing={(e) => handleOfferQuant(e.nativeEvent.text)}
+                  style={{
+                    borderWidth: 1,
+                    borderColor: "#ccc",
+                    padding: 5,
+                    marginLeft: 5,
+                    width: 50,
+                  }}
+                />
+                / {selectedOffer.prod.quantity}
+                {"\n"}
+              </Text>
+            ) : null}
+
+            <View style={{ flexDirection: "row" }}>
+              <Pressable
+                style={[
+                  {
+                    marginRight: 10,
+                    borderRadius: 10,
+                    padding: 10,
+                    elevation: 2,
+                  },
+                  { backgroundColor: "red" },
+                ]}
+                onPress={() => {
+                  setOfferSelected(false);
+                  setSelectedOffer(null);
+                }}
+              >
+                <Text style={{ color: "white" }}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  { borderRadius: 10, padding: 10, elevation: 2 },
+                  { backgroundColor: "#1892ff" },
+                ]}
+                onPress={() => {
+                  setRequestOpen(false);
+                  setOfferInfo(selectedProduct?.prod as ProductFinal);
+                }}
+                disabled={selectedOffer === null}
+              >
+                <Text style={{ color: "white" }}>Confirm</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ScrollView>
-        <View
-          style={{
-            width: "95%",
-            marginLeft: "2%",
-            justifyContent: "center",
-            alignItems: "flex-start",
-          }}
-        >
-          {productsRetrieved ? (
-            <>
-              <ProductList />
-              <BarterScreen />
-              <OfferScreen />
-              <OfferSelectionScreen />
-            </>
-          ) : (
-            <>
-              <ActivityIndicator size="large" />
-              <Text>Loading products...</Text>
-            </>
-          )}
-        </View>
+        {getUser() !== null && getApproved() ? (
+          <View
+            style={{
+              width: "95%",
+              marginLeft: "2%",
+              justifyContent: "center",
+              alignItems: "flex-start",
+            }}
+          >
+            {productsRetrieved ? (
+              <>
+                <ProductList />
+                <BarterScreen />
+                <OfferScreen />
+                <OfferSelectionScreen />
+                <RequestScreen />
+              </>
+            ) : (
+              <>
+                <ActivityIndicator size="large" />
+                <Text>Loading products...</Text>
+              </>
+            )}
+          </View>
+        ) : (
+          <View
+            style={{
+              width: "95%",
+              marginLeft: "2%",
+              marginTop: "5%",
+              justifyContent: "center",
+              alignItems: "flex-start",
+            }}
+          >
+            <Text style={{ fontSize: 24, fontWeight: "bold" }}>
+              You must be logged in and approved to barter
+            </Text>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

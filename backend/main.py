@@ -252,6 +252,18 @@ async def get_user(username: str):
             raise HTTPException(status_code=404, detail="User not found")
         return vars(user)
 
+#Get all users
+@app.get("/users")
+async def get_users():
+    with local_session() as session:
+        users = session.query(db.User).all()
+        users_arr = []
+        for user in users:
+            next_user = vars(user)
+            next_user.pop('_sa_instance_state')
+            users_arr.append(next_user)
+        return users_arr
+
 #Get a specific user's products
 @app.post("/user_products")
 async def get_user_products(username: str):
@@ -260,6 +272,33 @@ async def get_user_products(username: str):
         products = session.scalars(statement).all()
         return products
     
+#Approve a user
+@app.post("/approve_user")
+async def approve_user(username: str):
+    with local_session() as session:
+        statement = update(db.User).values({"is_approved": True}).where(db.User.username == username)
+        session.execute(statement)
+        session.commit()
+    return {"message": "User approved successfully"}
+
+#Delete a user
+@app.post("/delete_user")
+async def delete_user(username: str):
+    with local_session() as session:
+        query = delete(db.User).where(db.User.username == username)
+        session.execute(query)
+        session.commit()
+    return {"message": "User deleted successfully"}
+
+#Suspend a user
+@app.post("/suspend_user")
+async def suspend_user(username: str):
+    with local_session() as session:
+        statement = update(db.User).values({"is_approved": False}).where(db.User.username == username)
+        session.execute(statement)
+        session.commit()
+    return {"message": "User suspended successfully"}
+
 @app.get("/transactions")
 async def get_transactions(username: str | None = None, active_status: bool | None = None, requested: bool | None = None):
     username = False if username is None else username
@@ -433,3 +472,12 @@ async def delete_transaction(trans_id: int):
         session.execute(query)
         session.commit()
     return {"message": "Transaction deleted successfully"} 
+
+@app.post("/og_transaction")
+async def get_orig_transaction(trans_id: int):
+    with local_session() as session:
+        query = select(db.Transactions).filter(db.Transactions.idtransactions == trans_id)
+        transaction = session.scalars(query).first()
+        if transaction is None:
+            raise HTTPException(status_code=404, detail="Transaction not found")
+        return transaction

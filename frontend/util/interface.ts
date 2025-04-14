@@ -67,3 +67,18 @@ export interface TransactionReadable {
   value_2: number;
   is_active: boolean;
 }
+
+export interface UserInfo {
+  idusers: number;
+  username: string;
+  credit: number;
+  is_admin: boolean;
+  password: string;
+  phone_num: string;
+  street_num: string;
+  city: string;
+  state: string;
+  zip_code: number | null;
+  email: string;
+  is_approved: boolean;
+}
