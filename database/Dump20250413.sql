@@ -1,5 +1,3 @@
-CREATE DATABASE  IF NOT EXISTS `360_class` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
-USE `360_class`;
 -- MySQL dump 10.13  Distrib 8.0.41, for Win64 (x86_64)
 --
 -- Host: localhost    Database: 360_class
@@ -32,10 +30,13 @@ CREATE TABLE `products` (
   `datetime_created` datetime DEFAULT NULL,
   `is_active` tinyint DEFAULT NULL,
   `is_exchanged` tinyint DEFAULT NULL,
-  `posted_by` int DEFAULT NULL,
+  `posted_by` varchar(45) DEFAULT NULL,
+  `quantity` int DEFAULT NULL,
   PRIMARY KEY (`idProducts`),
-  UNIQUE KEY `idProducts_UNIQUE` (`idProducts`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  UNIQUE KEY `idProducts_UNIQUE` (`idProducts`),
+  KEY `posted_by_idx` (`posted_by`),
+  CONSTRAINT `posted_by` FOREIGN KEY (`posted_by`) REFERENCES `users` (`username`)
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -44,6 +45,7 @@ CREATE TABLE `products` (
 
 LOCK TABLES `products` WRITE;
 /*!40000 ALTER TABLE `products` DISABLE KEYS */;
+INSERT INTO `products` VALUES (4,'Seeds','For growing flowers and whatnot',7,'2025-04-11 13:23:13',0,0,'Ian',10),(5,'Butter','Made from cow\'s milk, counted in individual sticks',3,'2025-04-12 12:20:08',0,0,'Enoch',100),(6,'Oats','A part of every healthy diet! Measured in pounds',8,'2025-04-12 12:22:10',0,0,'Ian',50),(10,'Socks','Cover up your feet and stay warm!',12,'2025-04-13 13:53:06',0,0,'Enoch',20);
 /*!40000 ALTER TABLE `products` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -58,14 +60,21 @@ CREATE TABLE `transactions` (
   `idtransactions` int NOT NULL AUTO_INCREMENT,
   `item_exchanged_1` int DEFAULT NULL,
   `item_exchanged_2` int DEFAULT NULL,
-  `party_1` int DEFAULT NULL,
-  `party_2` int DEFAULT NULL,
+  `party_1` varchar(45) DEFAULT NULL,
+  `party_2` varchar(45) DEFAULT NULL,
   `date_started` datetime DEFAULT NULL,
   `date_ended` datetime DEFAULT NULL,
   `hash_key` varchar(45) NOT NULL,
+  `via_1` varchar(45) DEFAULT NULL,
+  `via_2` varchar(45) DEFAULT NULL,
+  `quantity_1` int DEFAULT NULL,
+  `quantity_2` int DEFAULT NULL,
+  `value_1` int DEFAULT NULL,
+  `value_2` int DEFAULT NULL,
+  `is_active` tinyint DEFAULT NULL,
   PRIMARY KEY (`idtransactions`),
   UNIQUE KEY `hash_key_UNIQUE` (`hash_key`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -74,6 +83,7 @@ CREATE TABLE `transactions` (
 
 LOCK TABLES `transactions` WRITE;
 /*!40000 ALTER TABLE `transactions` DISABLE KEYS */;
+INSERT INTO `transactions` VALUES (22,5,6,'Enoch','Ian','2025-04-13 14:33:32',NULL,'-5496865839295826025',NULL,NULL,8,3,24,24,1);
 /*!40000 ALTER TABLE `transactions` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -100,7 +110,7 @@ CREATE TABLE `users` (
   PRIMARY KEY (`idusers`,`username`),
   UNIQUE KEY `idusers_UNIQUE` (`idusers`),
   UNIQUE KEY `username_UNIQUE` (`username`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -109,6 +119,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
+INSERT INTO `users` VALUES (1,'Enoch',NULL,NULL,'Enoch','2088212650','420 s Asbury st #9','Moscow','Id',83843,'Myer9658@vandals.uidaho.edu',0),(3,'Ian',NULL,1,'asdf','5099999999','7717 W B Rd','Moscow','ID',83843,'Here@ian.com',1);
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -121,4 +132,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-03-14 16:45:38
+-- Dump completed on 2025-04-13 17:21:24
