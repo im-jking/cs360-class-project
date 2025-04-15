@@ -32,8 +32,8 @@ export default function Index() {
       body: JSON.stringify(new_prod),
     })
       .then((response) => {
-        console.log("Submitted: " + JSON.stringify(new_prod));
-        console.log(response);
+        // console.log("Submitted: " + JSON.stringify(new_prod));
+        // console.log(response);
         setCurProdInfo({
           prodName: "",
           prodDesc: "",
