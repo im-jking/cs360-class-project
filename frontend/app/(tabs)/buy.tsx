@@ -1,12 +1,37 @@
-import { HOST_WITH_PORT_API } from "@/util/environment";
+import { getToken } from "@/util/credentials";
+import { getApproved, getUser, HOST_WITH_PORT_API } from "@/util/environment";
 import { ProductFinal } from "@/util/interface";
-import { useEffect, useState } from "react";
-import { ActivityIndicator } from "react-native";
+import { useIsFocused } from "@react-navigation/native";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Button,
+  Modal,
+  Pressable,
+  TextInput,
+} from "react-native";
 import { SafeAreaView, ScrollView, Text, View } from "react-native";
+import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 
 export default function Index() {
   const [products, setProducts] = useState<ProductFinal[] | null>(null);
+  const [ownProducts, setOwnProducts] = useState<ProductFinal[] | null>(null);
   const [productsRetrieved, setProductsRetrieved] = useState(false);
+  const [bartInfo, setBartInfo] = useState<ProductFinal | null>(null);
+  const [offerInfo, setOfferInfo] = useState<ProductFinal | null>(null);
+  const [offerSelected, setOfferSelected] = useState(false);
+  const [requestOpen, setRequestOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<{
+    prod: ProductFinal;
+    quant: number;
+  } | null>(null);
+  const [selectedOffer, setSelectedOffer] = useState<{
+    prod: ProductFinal;
+    quant: number;
+    borrowed: boolean;
+  } | null>(null);
+
+  const isFocused = useIsFocused();
 
   useEffect(() => {
     fetch(`${HOST_WITH_PORT_API}/products`)
@@ -132,6 +157,13 @@ export default function Index() {
             <Text
               style={{ fontWeight: "bold", textDecorationLine: "underline" }}
             >
+              Quant.
+            </Text>
+          </View>
+          <View style={{ flex: 1, alignSelf: "stretch" }}>
+            <Text
+              style={{ fontWeight: "bold", textDecorationLine: "underline" }}
+            >
               Name
             </Text>
           </View>
@@ -139,24 +171,33 @@ export default function Index() {
             <Text
               style={{ fontWeight: "bold", textDecorationLine: "underline" }}
             >
-              Description
+              Desc.
             </Text>
           </View>
           <View style={{ flex: 1, alignSelf: "stretch" }}>
             <Text
               style={{ fontWeight: "bold", textDecorationLine: "underline" }}
             >
-              Price (USD)
+              Value
+            </Text>
+          </View>
+          <View style={{ flex: 1, alignSelf: "stretch" }}>
+            <Text
+              style={{ fontWeight: "bold", textDecorationLine: "underline" }}
+            >
+              Begin Barter
             </Text>
           </View>
         </View>
         <Text>{"\n"}</Text>
         {products?.map((product) => (
-          <>
+          <React.Fragment key={product.idProducts}>
             <View
               style={{ flex: 1, alignSelf: "stretch", flexDirection: "row" }}
-              key={product.idProducts}
             >
+              <View style={{ flex: 1, alignSelf: "stretch" }}>
+                <Text>{product.quantity}</Text>
+              </View>
               <View style={{ flex: 1, alignSelf: "stretch" }}>
                 <Text>{product.prodName}</Text>
               </View>
@@ -164,11 +205,19 @@ export default function Index() {
                 <Text>{product.prodDesc}</Text>
               </View>
               <View style={{ flex: 1, alignSelf: "stretch" }}>
-                <Text>{product.price}</Text>
+                <Text style={{ textAlign: "center" }}>{product.price}</Text>
+              </View>
+              <View style={{ flex: 1, alignSelf: "stretch" }}>
+                <Button
+                  title="Barter"
+                  onPress={() => {
+                    beginBarter(product);
+                  }}
+                />
               </View>
             </View>
             <Text>{"\n"}</Text>
-          </>
+          </React.Fragment>
         ))}
       </View>
     );
@@ -845,23 +894,45 @@ export default function Index() {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ScrollView>
-        <View
-          style={{
-            width: "95%",
-            marginLeft: "2%",
-            justifyContent: "center",
-            alignItems: "flex-start",
-          }}
-        >
-          {productsRetrieved ? (
-            <ProductList />
-          ) : (
-            <>
-              <ActivityIndicator size="large" />
-              <Text>Loading products...</Text>
-            </>
-          )}
-        </View>
+        {getUser() !== null && getApproved() ? (
+          <View
+            style={{
+              width: "95%",
+              marginLeft: "2%",
+              justifyContent: "center",
+              alignItems: "flex-start",
+            }}
+          >
+            {productsRetrieved ? (
+              <>
+                <ProductList />
+                <BarterScreen />
+                <OfferScreen />
+                <OfferSelectionScreen />
+                <RequestScreen />
+              </>
+            ) : (
+              <>
+                <ActivityIndicator size="large" />
+                <Text>Loading products...</Text>
+              </>
+            )}
+          </View>
+        ) : (
+          <View
+            style={{
+              width: "95%",
+              marginLeft: "2%",
+              marginTop: "5%",
+              justifyContent: "center",
+              alignItems: "flex-start",
+            }}
+          >
+            <Text style={{ fontSize: 24, fontWeight: "bold" }}>
+              You must be logged in and approved to barter
+            </Text>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

@@ -38,6 +38,7 @@ class Products(base):
     is_active = Column(Boolean)
     is_exchanged = Column(Boolean)
     posted_by = Column(String(45))
+    quantity = Column(Integer)
 
 class Transactions(base):
     __tablename__ = 'transactions'
@@ -45,8 +46,15 @@ class Transactions(base):
     idtransactions = Column(Integer, primary_key=True, nullable=True, autoincrement=True)
     item_exchanged_1 = Column(Integer)
     item_exchanged_2 = Column(Integer)
-    party_1 = Column(Integer)
-    party_2 = Column(Integer)
+    party_1 = Column(String(45))
+    party_2 = Column(String(45))
     date_started = Column(DateTime)
     date_ended = Column(DateTime)
     hash_key = Column(String(45), nullable=True, unique=True)
+    via_1 = Column(String(45), nullable=True)
+    via_2 = Column(String(45), nullable=True)
+    quantity_1 = Column(Integer, nullable=True)
+    quantity_2 = Column(Integer, nullable=True)
+    value_1 = Column(Integer, nullable=True)
+    value_2 = Column(Integer, nullable=True)
+    is_active = Column(Boolean, nullable=False, default=True)

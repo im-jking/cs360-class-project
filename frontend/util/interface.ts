@@ -22,6 +22,7 @@ export interface ProductInfo {
   prodDesc: string;
   price: number | null;
   posted_by: string | null;
+  quantity: number;
 }
 
 export interface ProductFinal {
@@ -29,8 +30,55 @@ export interface ProductFinal {
   idProducts: number;
   is_active: boolean;
   is_exchanged: boolean;
-  posted_by: number | null;
+  posted_by: string | null;
   price: number;
   prodDesc: string;
   prodName: string;
+  quantity: number;
+}
+
+export interface TransactionInfo {
+  idtransactions: number;
+  item_exchanged_1: number;
+  item_exchanged_2: number;
+  party_1: string;
+  party_2: string;
+  date_started: string;
+  date_ended: string;
+  hash_key: string;
+  via_1: string;
+  via_2: string;
+  quantity_1: number;
+  quantity_2: number;
+  value_1: number;
+  value_2: number;
+  is_active: boolean;
+}
+
+export interface TransactionReadable {
+  idtransactions: number;
+  prod_1: string;
+  prod_2: string;
+  id_1: number;
+  id_2: number;
+  quant_1: number;
+  quant_2: number;
+  value_1: number;
+  value_2: number;
+  is_active: boolean;
+}
+
+export interface UserInfo {
+  idusers: number;
+  username: string;
+  credit: number;
+  is_admin: boolean;
+  password: string;
+  phone_num: string;
+  street_num: string;
+  city: string;
+  state: string;
+  zip_code: number | null;
+  email: string;
+  is_approved: boolean;
 }
