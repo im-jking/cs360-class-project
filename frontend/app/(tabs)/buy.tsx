@@ -11,7 +11,6 @@ import {
   TextInput,
 } from "react-native";
 import { SafeAreaView, ScrollView, Text, View } from "react-native";
-import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 
 export default function Index() {
   const [products, setProducts] = useState<ProductFinal[] | null>(null);
@@ -152,59 +151,97 @@ export default function Index() {
           width: "100%",
         }}
       >
-        <View style={{ flex: 1, alignSelf: "stretch", flexDirection: "row" }}>
-          <View style={{ flex: 1, alignSelf: "stretch" }}>
+        <View
+          style={{
+            flex: 1,
+            alignSelf: "stretch",
+            flexDirection: "row",
+            borderWidth: 1,
+          }}
+        >
+          <View style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}>
             <Text
-              style={{ fontWeight: "bold", textDecorationLine: "underline" }}
+              style={{
+                fontWeight: "bold",
+                textAlign: "center",
+              }}
             >
               Quant.
             </Text>
           </View>
-          <View style={{ flex: 1, alignSelf: "stretch" }}>
+          <View style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}>
             <Text
-              style={{ fontWeight: "bold", textDecorationLine: "underline" }}
+              style={{
+                fontWeight: "bold",
+                textAlign: "center",
+              }}
             >
               Name
             </Text>
           </View>
-          <View style={{ flex: 1, alignSelf: "stretch" }}>
+          <View style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}>
             <Text
-              style={{ fontWeight: "bold", textDecorationLine: "underline" }}
+              style={{
+                fontWeight: "bold",
+                textAlign: "center",
+              }}
             >
               Desc.
             </Text>
           </View>
-          <View style={{ flex: 1, alignSelf: "stretch" }}>
+          <View style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}>
             <Text
-              style={{ fontWeight: "bold", textDecorationLine: "underline" }}
+              style={{
+                fontWeight: "bold",
+                textAlign: "center",
+              }}
             >
               Value
             </Text>
           </View>
           <View style={{ flex: 1, alignSelf: "stretch" }}>
             <Text
-              style={{ fontWeight: "bold", textDecorationLine: "underline" }}
+              style={{
+                fontWeight: "bold",
+                textAlign: "center",
+              }}
             >
               Begin Barter
             </Text>
           </View>
         </View>
-        <Text>{"\n"}</Text>
         {products?.map((product) => (
           <React.Fragment key={product.idProducts}>
             <View
-              style={{ flex: 1, alignSelf: "stretch", flexDirection: "row" }}
+              style={{
+                flex: 1,
+                alignSelf: "stretch",
+                flexDirection: "row",
+                borderWidth: 1,
+              }}
             >
-              <View style={{ flex: 1, alignSelf: "stretch" }}>
-                <Text>{product.quantity}</Text>
+              <View
+                style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}
+              >
+                <Text
+                  style={{ textAlign: "center", textAlignVertical: "center" }}
+                >
+                  {product.quantity}
+                </Text>
               </View>
-              <View style={{ flex: 1, alignSelf: "stretch" }}>
-                <Text>{product.prodName}</Text>
+              <View
+                style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}
+              >
+                <Text style={{ textAlign: "center" }}>{product.prodName}</Text>
               </View>
-              <View style={{ flex: 1, alignSelf: "stretch" }}>
-                <Text>{product.prodDesc}</Text>
+              <View
+                style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}
+              >
+                <Text style={{ textAlign: "center" }}>{product.prodDesc}</Text>
               </View>
-              <View style={{ flex: 1, alignSelf: "stretch" }}>
+              <View
+                style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}
+              >
                 <Text style={{ textAlign: "center" }}>{product.price}</Text>
               </View>
               <View style={{ flex: 1, alignSelf: "stretch" }}>
@@ -216,9 +253,9 @@ export default function Index() {
                 />
               </View>
             </View>
-            <Text>{"\n"}</Text>
           </React.Fragment>
         ))}
+        <Text>{"\n"}</Text>
       </View>
     );
   };
@@ -928,7 +965,14 @@ export default function Index() {
               alignItems: "flex-start",
             }}
           >
-            <Text style={{ fontSize: 24, fontWeight: "bold" }}>
+            <Text
+              style={{
+                fontSize: 24,
+                fontWeight: "bold",
+                textAlign: "center",
+                width: "100%",
+              }}
+            >
               You must be logged in and approved to barter
             </Text>
           </View>

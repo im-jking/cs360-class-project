@@ -284,9 +284,11 @@ export default function Index() {
         },
         body: JSON.stringify(this_trans),
       })
-        .then((response) => response.json())
+        // .then((response) => response.json())
         // .then((response) => console.log(response))
         .catch((error) => console.error("Accept transaction error: " + error));
+
+      getClosedTransactions();
     } else {
       await fetch(
         `${HOST_WITH_PORT_API}/delete_transaction?trans_id=${this_trans.idtransactions}`,
@@ -302,6 +304,7 @@ export default function Index() {
         // .then((response) => console.log(response))
         .catch((error) => console.error("Delete transaction error: " + error));
     }
+    getOpenRequests();
   };
 
   const approveUser = async (username: string) => {
@@ -348,27 +351,37 @@ export default function Index() {
   const OwnProducts = () => {
     return (
       <>
-        <Text style={{ fontSize: 24, marginBottom: 10 }}>Your Products</Text>
+        <Text style={{ fontSize: 24, marginBottom: 10, marginTop: 10 }}>
+          Your Products
+        </Text>
         <View
           style={{
             width: "100%",
             flex: 1,
             alignSelf: "stretch",
             flexDirection: "row",
-            marginBottom: 10,
+            borderWidth: 1,
           }}
         >
-          <View style={{ flex: 1, alignSelf: "stretch" }}>
-            <Text style={{ fontWeight: "bold" }}>Quantity</Text>
+          <View style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}>
+            <Text style={{ fontWeight: "bold", textAlign: "center" }}>
+              Quantity
+            </Text>
+          </View>
+          <View style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}>
+            <Text style={{ fontWeight: "bold", textAlign: "center" }}>
+              Name
+            </Text>
+          </View>
+          <View style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}>
+            <Text style={{ fontWeight: "bold", textAlign: "center" }}>
+              Description
+            </Text>
           </View>
           <View style={{ flex: 1, alignSelf: "stretch" }}>
-            <Text style={{ fontWeight: "bold" }}>Name</Text>
-          </View>
-          <View style={{ flex: 1, alignSelf: "stretch" }}>
-            <Text style={{ fontWeight: "bold" }}>Description</Text>
-          </View>
-          <View style={{ flex: 1, alignSelf: "stretch" }}>
-            <Text style={{ fontWeight: "bold" }}>Value</Text>
+            <Text style={{ fontWeight: "bold", textAlign: "center" }}>
+              Value
+            </Text>
           </View>
         </View>
         {ownProducts?.map((product) => (
@@ -379,25 +392,31 @@ export default function Index() {
                 flex: 1,
                 alignSelf: "stretch",
                 flexDirection: "row",
-                marginBottom: 10,
+                borderWidth: 1,
               }}
             >
-              <View style={{ flex: 1, alignSelf: "stretch" }}>
-                <Text>{product.quantity}</Text>
+              <View
+                style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}
+              >
+                <Text style={{ textAlign: "center" }}>{product.quantity}</Text>
+              </View>
+              <View
+                style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}
+              >
+                <Text style={{ textAlign: "center" }}>{product.prodName}</Text>
+              </View>
+              <View
+                style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}
+              >
+                <Text style={{ textAlign: "center" }}>{product.prodDesc}</Text>
               </View>
               <View style={{ flex: 1, alignSelf: "stretch" }}>
-                <Text>{product.prodName}</Text>
-              </View>
-              <View style={{ flex: 1, alignSelf: "stretch" }}>
-                <Text>{product.prodDesc}</Text>
-              </View>
-              <View style={{ flex: 1, alignSelf: "stretch" }}>
-                <Text>{product.price}</Text>
+                <Text style={{ textAlign: "center" }}>{product.price}</Text>
               </View>
             </View>
-            <Text>{"\n"}</Text>
           </React.Fragment>
         ))}
+        <Text>{"\n"}</Text>
       </>
     );
   };
@@ -411,17 +430,20 @@ export default function Index() {
         <View
           style={{
             width: "100%",
-            flex: 1,
             alignSelf: "stretch",
             flexDirection: "row",
-            marginBottom: 10,
+            borderWidth: 1,
           }}
         >
-          <View style={{ flex: 1, alignSelf: "stretch" }}>
-            <Text style={{ fontWeight: "bold" }}>Request</Text>
+          <View style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}>
+            <Text style={{ fontWeight: "bold", textAlign: "center" }}>
+              Request
+            </Text>
           </View>
           <View style={{ flex: 1, alignSelf: "stretch" }}>
-            <Text style={{ fontWeight: "bold" }}>Offer</Text>
+            <Text style={{ fontWeight: "bold", textAlign: "center" }}>
+              Offer
+            </Text>
           </View>
         </View>
         {openTransactions?.map((transaction) => (
@@ -432,18 +454,20 @@ export default function Index() {
                 flex: 1,
                 alignSelf: "stretch",
                 flexDirection: "row",
-                marginBottom: 10,
+                borderWidth: 1,
               }}
               key={transaction.idtransactions}
             >
-              <View style={{ flex: 1, alignSelf: "stretch" }}>
-                <Text>
+              <View
+                style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}
+              >
+                <Text style={{ textAlign: "center" }}>
                   {transaction.quant_1} x {transaction.prod_1} (Val.{" "}
                   {transaction.value_1})
                 </Text>
               </View>
               <View style={{ flex: 1, alignSelf: "stretch" }}>
-                <Text>
+                <Text style={{ textAlign: "center" }}>
                   {transaction.quant_2} x {transaction.prod_2} (Val.{" "}
                   {transaction.value_2})
                 </Text>
@@ -462,20 +486,23 @@ export default function Index() {
         <Text style={{ fontSize: 24, marginBottom: 10 }}>Open Requests</Text>
         <View
           style={{
-            width: "100%",
-            flex: 1,
+            width: "69%",
             alignSelf: "stretch",
             flexDirection: "row",
-            marginBottom: 10,
+            borderWidth: 1,
           }}
         >
-          <View style={{ flex: 1, alignSelf: "stretch" }}>
-            <Text style={{ fontWeight: "bold" }}>Request</Text>
+          <View style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}>
+            <Text style={{ fontWeight: "bold", textAlign: "center" }}>
+              Request
+            </Text>
           </View>
           <View style={{ flex: 1, alignSelf: "stretch" }}>
-            <Text style={{ fontWeight: "bold" }}>Offer</Text>
+            <Text style={{ fontWeight: "bold", textAlign: "center" }}>
+              Offer
+            </Text>
           </View>
-          <View style={{ flex: 1, alignSelf: "stretch" }}></View>
+          {/* <View style={{ flex: 1, alignSelf: "stretch" }}></View> */}
         </View>
         {openRequests?.map((transaction) => (
           <React.Fragment key={transaction.idtransactions}>
@@ -485,30 +512,38 @@ export default function Index() {
                 flex: 1,
                 alignSelf: "stretch",
                 flexDirection: "row",
-                marginBottom: 10,
+                borderWidth: 1,
               }}
               key={transaction.idtransactions}
             >
-              <View style={{ flex: 1, alignSelf: "stretch" }}>
-                <Text>
+              <View
+                style={{ flex: 2, alignSelf: "stretch", borderRightWidth: 1 }}
+              >
+                <Text style={{ textAlign: "center" }}>
                   {transaction.quant_1} x {transaction.prod_1} (Val.{" "}
                   {transaction.value_1})
                 </Text>
               </View>
-              <View style={{ flex: 1, alignSelf: "stretch" }}>
-                <Text>
+              <View
+                style={{ flex: 2, alignSelf: "stretch", borderRightWidth: 1 }}
+              >
+                <Text style={{ textAlign: "center" }}>
                   {transaction.quant_2} x {transaction.prod_2} (Val.{" "}
                   {transaction.value_2})
                 </Text>
               </View>
               <View style={{ flex: 1, alignSelf: "stretch" }}>
                 <Pressable onPress={() => acceptTrans(true, transaction)}>
-                  <Text style={{ color: "blue" }}>Accept</Text>
+                  <Text style={{ color: "blue", textAlign: "center" }}>
+                    Accept
+                  </Text>
                 </Pressable>
               </View>
               <View>
                 <Pressable onPress={() => acceptTrans(false, transaction)}>
-                  <Text style={{ color: "red" }}>Decline</Text>
+                  <Text style={{ color: "red", textAlign: "center" }}>
+                    Decline
+                  </Text>
                 </Pressable>
               </View>
             </View>
@@ -531,14 +566,18 @@ export default function Index() {
             flex: 1,
             alignSelf: "stretch",
             flexDirection: "row",
-            marginBottom: 10,
+            borderWidth: 1,
           }}
         >
-          <View style={{ flex: 1, alignSelf: "stretch" }}>
-            <Text style={{ fontWeight: "bold" }}>Request</Text>
+          <View style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}>
+            <Text style={{ fontWeight: "bold", textAlign: "center" }}>
+              Request
+            </Text>
           </View>
           <View style={{ flex: 1, alignSelf: "stretch" }}>
-            <Text style={{ fontWeight: "bold" }}>Offer</Text>
+            <Text style={{ fontWeight: "bold", textAlign: "center" }}>
+              Offer
+            </Text>
           </View>
         </View>
         {closedTransactions?.map((transaction) => (
@@ -549,26 +588,28 @@ export default function Index() {
                 flex: 1,
                 alignSelf: "stretch",
                 flexDirection: "row",
-                marginBottom: 10,
+                borderWidth: 1,
               }}
               key={transaction.idtransactions}
             >
-              <View style={{ flex: 1, alignSelf: "stretch" }}>
-                <Text>
+              <View
+                style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}
+              >
+                <Text style={{ textAlign: "center" }}>
                   {transaction.quant_1} x {transaction.prod_1} (Val.{" "}
                   {transaction.value_1})
                 </Text>
               </View>
               <View style={{ flex: 1, alignSelf: "stretch" }}>
-                <Text>
+                <Text style={{ textAlign: "center" }}>
                   {transaction.quant_2} x {transaction.prod_2} (Val.{" "}
                   {transaction.value_2})
                 </Text>
               </View>
             </View>
-            <Text>{"\n"}</Text>
           </React.Fragment>
         ))}
+        <Text>{"\n"}</Text>
       </>
     ) : null;
   };
@@ -577,7 +618,14 @@ export default function Index() {
     return (
       <>
         {allTransactions.length > 0 || users.length > 0 ? (
-          <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10 }}>
+          <Text
+            style={{
+              fontSize: 24,
+              fontWeight: "bold",
+              marginBottom: 10,
+              textAlign: "center",
+            }}
+          >
             Admin Dashboard
           </Text>
         ) : null}
@@ -588,18 +636,24 @@ export default function Index() {
             </Text>
             <View
               style={{
-                width: "100%",
+                width: "80%",
                 flex: 1,
                 alignSelf: "stretch",
                 flexDirection: "row",
-                marginBottom: 10,
+                borderWidth: 1,
               }}
             >
-              <View style={{ flex: 1, alignSelf: "stretch" }}>
-                <Text style={{ fontWeight: "bold" }}>Request</Text>
+              <View
+                style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}
+              >
+                <Text style={{ fontWeight: "bold", textAlign: "center" }}>
+                  Request
+                </Text>
               </View>
               <View style={{ flex: 1, alignSelf: "stretch" }}>
-                <Text style={{ fontWeight: "bold" }}>Offer</Text>
+                <Text style={{ fontWeight: "bold", textAlign: "center" }}>
+                  Offer
+                </Text>
               </View>
             </View>
             {allTransactions?.map((transaction) => (
@@ -610,18 +664,30 @@ export default function Index() {
                     flex: 1,
                     alignSelf: "stretch",
                     flexDirection: "row",
-                    marginBottom: 10,
+                    borderWidth: 1,
                   }}
                   key={transaction.idtransactions}
                 >
-                  <View style={{ flex: 1, alignSelf: "stretch" }}>
-                    <Text>
+                  <View
+                    style={{
+                      flex: 2,
+                      alignSelf: "stretch",
+                      borderRightWidth: 1,
+                    }}
+                  >
+                    <Text style={{ textAlign: "center" }}>
                       {transaction.quant_1} x {transaction.prod_1} (Val.{" "}
                       {transaction.value_1})
                     </Text>
                   </View>
-                  <View style={{ flex: 1, alignSelf: "stretch" }}>
-                    <Text>
+                  <View
+                    style={{
+                      flex: 2,
+                      alignSelf: "stretch",
+                      borderRightWidth: 1,
+                    }}
+                  >
+                    <Text style={{ textAlign: "center" }}>
                       {transaction.quant_2} x {transaction.prod_2} (Val.{" "}
                       {transaction.value_2})
                     </Text>
@@ -633,15 +699,20 @@ export default function Index() {
                         setTransModal(transaction);
                       }}
                     >
-                      <Text style={{ color: "blue" }}>View</Text>
+                      <Text style={{ color: "blue", textAlign: "center" }}>
+                        View
+                      </Text>
                     </Pressable>
                   </View>
                 </View>
               </React.Fragment>
             ))}
-            <Text style={{ fontWeight: "bold", marginBottom: 10 }}>
+            <Text
+              style={{ fontWeight: "bold", marginBottom: 10, marginTop: 10 }}
+            >
               Total Value Traded = {getTotalValue()}
             </Text>
+            <Text>{"\n"}</Text>
           </>
         ) : null}
 
@@ -654,20 +725,25 @@ export default function Index() {
                   style={{
                     width: "100%",
                     flex: 1,
-                    // alignSelf: "stretch",
                     flexDirection: "row",
                     marginBottom: 5,
+                    borderWidth: 1,
                   }}
                 >
-                  <View style={{ flex: 1, marginBottom: 10 }}>
-                    <Text>{user.username}</Text>
+                  <View style={{ flex: 1, borderRightWidth: 1 }}>
+                    <Text style={{ textAlign: "center" }}>{user.username}</Text>
                   </View>
-                  <Pressable onPress={() => setUserModal(user)}>
-                    <Text style={{ color: "blue" }}>View Account</Text>
-                  </Pressable>
+                  <View style={{ flex: 1 }}>
+                    <Pressable onPress={() => setUserModal(user)}>
+                      <Text style={{ color: "blue", textAlign: "center" }}>
+                        View Account
+                      </Text>
+                    </Pressable>
+                  </View>
                 </View>
               </React.Fragment>
             ))}
+            <Text>{"\n"}</Text>
           </>
         ) : null}
       </>
@@ -865,7 +941,7 @@ export default function Index() {
           {/* All registration components are in this section */}
           {menuOpen === 1 && getUser() == null ? (
             <>
-              <Text style={{ fontSize: 24 }}>Register</Text>
+              <Text style={{ fontSize: 24, margin: "2.5%" }}>Register</Text>
 
               <Input
                 placeholder="Username"
@@ -946,7 +1022,7 @@ export default function Index() {
           {/* All login components are in this section */}
           {menuOpen === 2 && getUser() == null ? (
             <>
-              <Text style={{ fontSize: 24 }}>Login</Text>
+              <Text style={{ fontSize: 24, margin: "2.5%" }}>Login</Text>
 
               <Input
                 placeholder="Username"
@@ -972,7 +1048,6 @@ export default function Index() {
           {/* Logout and all display items */}
           {getUser() != null ? (
             <View>
-              <Button title="Logout" onPress={logout} />
               <OwnProducts />
               <OpenTransactions />
               <OpenRequests />
@@ -980,6 +1055,7 @@ export default function Index() {
               <AdminInfo />
               <UserModal />
               <TransModal />
+              <Button title="Logout" onPress={logout} />
             </View>
           ) : null}
         </View>
