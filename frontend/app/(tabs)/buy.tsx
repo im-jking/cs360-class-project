@@ -1,6 +1,11 @@
 import { getToken } from "@/util/credentials";
-import { getApproved, getUser, HOST_WITH_PORT_API } from "@/util/environment";
-import { ProductFinal } from "@/util/interface";
+import {
+  checkAdmin,
+  getApproved,
+  getUser,
+  HOST_WITH_PORT_API,
+} from "@/util/environment";
+import { ProductFinal, ProductInfo } from "@/util/interface";
 import { useIsFocused } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import {
@@ -29,6 +34,7 @@ export default function Index() {
     quant: number;
     borrowed: boolean;
   } | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const isFocused = useIsFocused();
 
@@ -48,6 +54,9 @@ export default function Index() {
         setProductsRetrieved(true);
       })
       .catch((error) => console.error(error));
+
+    const user = getUser();
+    checkAdmin(user as string).then((response) => setIsAdmin(response));
   }, [isFocused]);
 
   //Check if user is logged in and start barter flow
@@ -115,6 +124,20 @@ export default function Index() {
     } else {
       alert("Please select a product and an offer to barter.");
     }
+  };
+
+  //Remove a product
+  const deleteItem = async (productID: number) => {
+    await fetch(`${HOST_WITH_PORT_API}/products?product=${productID}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${await getToken("user")}`,
+      },
+    })
+      .then((response) => response.json())
+      .then((response) => console.log(response))
+      .catch((error) => console.error(error));
   };
 
   const handleProdQuant = (value: string) => {
@@ -255,6 +278,19 @@ export default function Index() {
                     beginBarter(product);
                   }}
                 />
+                {isAdmin ? (
+                  <Pressable onPress={() => deleteItem(product.idProducts)}>
+                    <Text
+                      style={{
+                        textAlign: "center",
+                        color: "red",
+                        fontSize: 18,
+                      }}
+                    >
+                      Remove
+                    </Text>
+                  </Pressable>
+                ) : null}
               </View>
             </View>
           </React.Fragment>

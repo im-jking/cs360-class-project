@@ -68,6 +68,17 @@ class ProductInfo(BaseModel):
     posted_by: str | None
     quantity: int | None
 
+class ProductFinal(BaseModel):
+  datetime_created: str
+  idProducts: int
+  is_active: bool
+  is_exchanged: bool
+  posted_by: str | None
+  price: int
+  prodDesc: str
+  prodName: str
+  quantity: int
+
 class TransactionInfo(BaseModel):
     item_exchanged_1: int
     item_exchanged_2: int
@@ -241,6 +252,16 @@ async def add_product(product_info: ProductInfo):
     with local_session() as session:
         new_product = db.Products(**prod_info)
         session.add(new_product)
+        session.commit()
+
+#Delete a product
+@app.delete("/products")
+async def delete_product(product: int):
+    print(product)
+
+    with local_session() as session:
+        query = delete(db.Products).where(db.Products.idProducts == product)
+        session.execute(query)
         session.commit()
 
 #Get a specific user
