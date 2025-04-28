@@ -67,7 +67,6 @@ export default function Index() {
   //Create a transaction on the database with populated info
   const sendBarter = async () => {
     if (selectedProduct && selectedOffer) {
-      //EDIT BELOW IF ROUTED THROUGH MIDDLE MEN
       const barterInfo = {
         item_exchanged_1: selectedProduct.prod.idProducts,
         item_exchanged_2: selectedOffer.prod.idProducts,
@@ -77,11 +76,16 @@ export default function Index() {
           : getUser(),
         // via_1: null,
         via_2: selectedOffer.borrowed ? getUser() : null,
-        quantity_1: selectedProduct.quant,
+        quantity_1: selectedOffer.borrowed
+          ? selectedProduct.quant - 1
+          : selectedProduct.quant,
         quantity_2: selectedOffer.quant,
-        value_1: selectedProduct.prod.price * selectedProduct.quant,
+        value_1: selectedOffer.borrowed
+          ? selectedProduct.prod.price * (selectedProduct.quant - 1)
+          : selectedProduct.prod.price * selectedProduct.quant,
         value_2: selectedOffer.prod.price * selectedOffer.quant,
         is_active: true,
+        part_stage: selectedOffer.borrowed ? 0 : null,
       };
 
       // console.log(barterInfo);
@@ -745,185 +749,187 @@ export default function Index() {
         visible={requestOpen}
         onRequestClose={() => setRequestOpen(false)}
       >
-        <View
-          style={{
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
+        <ScrollView>
           <View
             style={{
-              margin: 5,
-              backgroundColor: "white",
-              borderRadius: 20,
-              padding: 35,
+              flex: 1,
+              justifyContent: "center",
               alignItems: "center",
-              shadowColor: "#000",
-              shadowOffset: {
-                width: 0,
-                height: 2,
-              },
-              shadowOpacity: 0.25,
-              shadowRadius: 4,
-              elevation: 5,
             }}
           >
-            <Text
+            <View
               style={{
-                textDecorationLine: "underline",
-                fontWeight: "bold",
-                marginBottom: 20,
+                margin: 5,
+                backgroundColor: "white",
+                borderRadius: 20,
+                padding: 35,
+                alignItems: "center",
+                shadowColor: "#000",
+                shadowOffset: {
+                  width: 0,
+                  height: 2,
+                },
+                shadowOpacity: 0.25,
+                shadowRadius: 4,
+                elevation: 5,
               }}
             >
-              What do you want traded?
-            </Text>
-
-            <>
-              <View
-                style={{
-                  alignSelf: "stretch",
-                  flexDirection: "row",
-                }}
-              >
-                <View style={{ marginRight: 10 }}>
-                  <Text style={{ fontWeight: "bold" }}>Quant.</Text>
-                </View>
-                <View style={{ marginRight: 10 }}>
-                  <Text style={{ fontWeight: "bold" }}>Title</Text>
-                </View>
-                <View style={{ marginRight: 10 }}>
-                  <Text style={{ fontWeight: "bold" }}>Value</Text>
-                </View>
-                <View>
-                  <Pressable
-                    style={[
-                      {
-                        borderRadius: 10,
-                        padding: 5,
-                        elevation: 2,
-                        visibility: "hidden",
-                      },
-                    ]}
-                  >
-                    <Text style={{ color: "white" }}>Select</Text>
-                  </Pressable>
-                </View>
-              </View>
-            </>
-
-            <View>
-              {products?.map((product) => (
-                <React.Fragment key={product.idProducts}>
-                  <View
-                    style={{
-                      // width: "100%",
-                      // flex: 1,
-                      alignSelf: "stretch",
-                      flexDirection: "row",
-                      marginBottom: 10,
-                    }}
-                    key={product.idProducts}
-                  >
-                    <View style={{ marginRight: 10 }}>
-                      <Text>{product.quantity}</Text>
-                    </View>
-                    <View style={{ marginRight: 10 }}>
-                      <Text>{product.prodName}</Text>
-                    </View>
-                    <View style={{ marginRight: 10 }}>
-                      <Text>{product.price}</Text>
-                    </View>
-                    <View>
-                      <Pressable
-                        style={[
-                          {
-                            borderRadius: 10,
-                            padding: 5,
-                            elevation: 2,
-                          },
-                          selectedOffer?.prod.idProducts == product.idProducts
-                            ? { backgroundColor: "#1892ff" }
-                            : { backgroundColor: "#c5c5c5" },
-                        ]}
-                        onPress={() => {
-                          setSelectedOffer({
-                            prod: product,
-                            quant: 1,
-                            borrowed: true,
-                          });
-                        }}
-                      >
-                        <Text style={{ color: "white" }}>Select</Text>
-                      </Pressable>
-                    </View>
-                  </View>
-                  <Text>{"\n"}</Text>
-                </React.Fragment>
-              ))}
-            </View>
-
-            {selectedOffer ? (
               <Text
                 style={{
+                  textDecorationLine: "underline",
                   fontWeight: "bold",
-                  marginBottom: 10,
+                  marginBottom: 20,
                 }}
               >
-                Quantity:{"    "}
-                <TextInput
-                  keyboardType="numeric"
-                  defaultValue={
-                    selectedOffer ? selectedOffer?.quant.toString() : "0"
-                  }
-                  onEndEditing={(e) => handleOfferQuant(e.nativeEvent.text)}
-                  style={{
-                    borderWidth: 1,
-                    borderColor: "#ccc",
-                    padding: 5,
-                    marginLeft: 5,
-                    width: 50,
-                  }}
-                />
-                / {selectedOffer.prod.quantity}
-                {"\n"}
+                What do you want traded?
               </Text>
-            ) : null}
 
-            <View style={{ flexDirection: "row" }}>
-              <Pressable
-                style={[
-                  {
-                    marginRight: 10,
-                    borderRadius: 10,
-                    padding: 10,
-                    elevation: 2,
-                  },
-                  { backgroundColor: "red" },
-                ]}
-                onPress={() => {
-                  setOfferSelected(false);
-                  setSelectedOffer(null);
-                }}
-              >
-                <Text style={{ color: "white" }}>Cancel</Text>
-              </Pressable>
-              <Pressable
-                style={[
-                  { borderRadius: 10, padding: 10, elevation: 2 },
-                  { backgroundColor: "#1892ff" },
-                ]}
-                onPress={() => {
-                  setRequestOpen(false);
-                  setOfferInfo(selectedProduct?.prod as ProductFinal);
-                }}
-                disabled={selectedOffer === null}
-              >
-                <Text style={{ color: "white" }}>Confirm</Text>
-              </Pressable>
+              <>
+                <View
+                  style={{
+                    alignSelf: "stretch",
+                    flexDirection: "row",
+                  }}
+                >
+                  <View style={{ marginRight: 10 }}>
+                    <Text style={{ fontWeight: "bold" }}>Quant.</Text>
+                  </View>
+                  <View style={{ marginRight: 10 }}>
+                    <Text style={{ fontWeight: "bold" }}>Title</Text>
+                  </View>
+                  <View style={{ marginRight: 10 }}>
+                    <Text style={{ fontWeight: "bold" }}>Value</Text>
+                  </View>
+                  <View>
+                    <Pressable
+                      style={[
+                        {
+                          borderRadius: 10,
+                          padding: 5,
+                          elevation: 2,
+                          visibility: "hidden",
+                        },
+                      ]}
+                    >
+                      <Text style={{ color: "white" }}>Select</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              </>
+
+              <View>
+                {products?.map((product) => (
+                  <React.Fragment key={product.idProducts}>
+                    <View
+                      style={{
+                        // width: "100%",
+                        // flex: 1,
+                        alignSelf: "stretch",
+                        flexDirection: "row",
+                        marginBottom: 10,
+                      }}
+                      key={product.idProducts}
+                    >
+                      <View style={{ marginRight: 10 }}>
+                        <Text>{product.quantity}</Text>
+                      </View>
+                      <View style={{ marginRight: 10 }}>
+                        <Text>{product.prodName}</Text>
+                      </View>
+                      <View style={{ marginRight: 10 }}>
+                        <Text>{product.price}</Text>
+                      </View>
+                      <View>
+                        <Pressable
+                          style={[
+                            {
+                              borderRadius: 10,
+                              padding: 5,
+                              elevation: 2,
+                            },
+                            selectedOffer?.prod.idProducts == product.idProducts
+                              ? { backgroundColor: "#1892ff" }
+                              : { backgroundColor: "#c5c5c5" },
+                          ]}
+                          onPress={() => {
+                            setSelectedOffer({
+                              prod: product,
+                              quant: 1,
+                              borrowed: true,
+                            });
+                          }}
+                        >
+                          <Text style={{ color: "white" }}>Select</Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                    <Text>{"\n"}</Text>
+                  </React.Fragment>
+                ))}
+              </View>
+
+              {selectedOffer ? (
+                <Text
+                  style={{
+                    fontWeight: "bold",
+                    marginBottom: 10,
+                  }}
+                >
+                  Quantity:{"    "}
+                  <TextInput
+                    keyboardType="numeric"
+                    defaultValue={
+                      selectedOffer ? selectedOffer?.quant.toString() : "0"
+                    }
+                    onEndEditing={(e) => handleOfferQuant(e.nativeEvent.text)}
+                    style={{
+                      borderWidth: 1,
+                      borderColor: "#ccc",
+                      padding: 5,
+                      marginLeft: 5,
+                      width: 50,
+                    }}
+                  />
+                  / {selectedOffer.prod.quantity}
+                  {"\n"}
+                </Text>
+              ) : null}
+
+              <View style={{ flexDirection: "row" }}>
+                <Pressable
+                  style={[
+                    {
+                      marginRight: 10,
+                      borderRadius: 10,
+                      padding: 10,
+                      elevation: 2,
+                    },
+                    { backgroundColor: "red" },
+                  ]}
+                  onPress={() => {
+                    setOfferSelected(false);
+                    setSelectedOffer(null);
+                  }}
+                >
+                  <Text style={{ color: "white" }}>Cancel</Text>
+                </Pressable>
+                <Pressable
+                  style={[
+                    { borderRadius: 10, padding: 10, elevation: 2 },
+                    { backgroundColor: "#1892ff" },
+                  ]}
+                  onPress={() => {
+                    setRequestOpen(false);
+                    setOfferInfo(selectedProduct?.prod as ProductFinal);
+                  }}
+                  disabled={selectedOffer === null}
+                >
+                  <Text style={{ color: "white" }}>Confirm</Text>
+                </Pressable>
+              </View>
             </View>
           </View>
-        </View>
+        </ScrollView>
       </Modal>
     );
   };

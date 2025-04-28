@@ -58,3 +58,4 @@ class Transactions(base):
     value_1 = Column(Integer, nullable=True)
     value_2 = Column(Integer, nullable=True)
     is_active = Column(Boolean, nullable=False, default=True)
+    part_stage = Column(Integer, nullable=True)
