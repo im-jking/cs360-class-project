@@ -72,7 +72,9 @@ export default function Index() {
               alignItems: "flex-start",
             }}
           >
-            <Text style={{ fontSize: 24 }}>Add Item Listing</Text>
+            <Text style={{ fontSize: 24, marginBottom: 10, marginTop: 10 }}>
+              Add Item Listing
+            </Text>
 
             <Input
               placeholder="Listing Title"
@@ -122,7 +124,14 @@ export default function Index() {
               alignItems: "flex-start",
             }}
           >
-            <Text style={{ fontSize: 24, fontWeight: "bold" }}>
+            <Text
+              style={{
+                fontSize: 24,
+                fontWeight: "bold",
+                textAlign: "center",
+                width: "100%",
+              }}
+            >
               You must be logged in and approved to list items
             </Text>
           </View>

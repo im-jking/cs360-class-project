@@ -53,6 +53,7 @@ export interface TransactionInfo {
   value_1: number;
   value_2: number;
   is_active: boolean;
+  part_stage: number | null;
 }
 
 export interface TransactionReadable {

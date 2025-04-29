@@ -1,6 +1,11 @@
 import { getToken } from "@/util/credentials";
-import { getApproved, getUser, HOST_WITH_PORT_API } from "@/util/environment";
-import { ProductFinal } from "@/util/interface";
+import {
+  checkAdmin,
+  getApproved,
+  getUser,
+  HOST_WITH_PORT_API,
+} from "@/util/environment";
+import { ProductFinal, ProductInfo } from "@/util/interface";
 import { useIsFocused } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import {
@@ -11,7 +16,6 @@ import {
   TextInput,
 } from "react-native";
 import { SafeAreaView, ScrollView, Text, View } from "react-native";
-import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 
 export default function Index() {
   const [products, setProducts] = useState<ProductFinal[] | null>(null);
@@ -30,6 +34,7 @@ export default function Index() {
     quant: number;
     borrowed: boolean;
   } | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const isFocused = useIsFocused();
 
@@ -49,6 +54,9 @@ export default function Index() {
         setProductsRetrieved(true);
       })
       .catch((error) => console.error(error));
+
+    const user = getUser();
+    checkAdmin(user as string).then((response) => setIsAdmin(response));
   }, [isFocused]);
 
   //Check if user is logged in and start barter flow
@@ -68,7 +76,6 @@ export default function Index() {
   //Create a transaction on the database with populated info
   const sendBarter = async () => {
     if (selectedProduct && selectedOffer) {
-      //EDIT BELOW IF ROUTED THROUGH MIDDLE MEN
       const barterInfo = {
         item_exchanged_1: selectedProduct.prod.idProducts,
         item_exchanged_2: selectedOffer.prod.idProducts,
@@ -78,11 +85,16 @@ export default function Index() {
           : getUser(),
         // via_1: null,
         via_2: selectedOffer.borrowed ? getUser() : null,
-        quantity_1: selectedProduct.quant,
+        quantity_1: selectedOffer.borrowed
+          ? selectedProduct.quant - 1
+          : selectedProduct.quant,
         quantity_2: selectedOffer.quant,
-        value_1: selectedProduct.prod.price * selectedProduct.quant,
+        value_1: selectedOffer.borrowed
+          ? selectedProduct.prod.price * (selectedProduct.quant - 1)
+          : selectedProduct.prod.price * selectedProduct.quant,
         value_2: selectedOffer.prod.price * selectedOffer.quant,
         is_active: true,
+        part_stage: selectedOffer.borrowed ? 0 : null,
       };
 
       // console.log(barterInfo);
@@ -112,6 +124,20 @@ export default function Index() {
     } else {
       alert("Please select a product and an offer to barter.");
     }
+  };
+
+  //Remove a product
+  const deleteItem = async (productID: number) => {
+    await fetch(`${HOST_WITH_PORT_API}/products?product=${productID}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${await getToken("user")}`,
+      },
+    })
+      .then((response) => response.json())
+      .then((response) => console.log(response))
+      .catch((error) => console.error(error));
   };
 
   const handleProdQuant = (value: string) => {
@@ -152,59 +178,97 @@ export default function Index() {
           width: "100%",
         }}
       >
-        <View style={{ flex: 1, alignSelf: "stretch", flexDirection: "row" }}>
-          <View style={{ flex: 1, alignSelf: "stretch" }}>
+        <View
+          style={{
+            flex: 1,
+            alignSelf: "stretch",
+            flexDirection: "row",
+            borderWidth: 1,
+          }}
+        >
+          <View style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}>
             <Text
-              style={{ fontWeight: "bold", textDecorationLine: "underline" }}
+              style={{
+                fontWeight: "bold",
+                textAlign: "center",
+              }}
             >
               Quant.
             </Text>
           </View>
-          <View style={{ flex: 1, alignSelf: "stretch" }}>
+          <View style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}>
             <Text
-              style={{ fontWeight: "bold", textDecorationLine: "underline" }}
+              style={{
+                fontWeight: "bold",
+                textAlign: "center",
+              }}
             >
               Name
             </Text>
           </View>
-          <View style={{ flex: 1, alignSelf: "stretch" }}>
+          <View style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}>
             <Text
-              style={{ fontWeight: "bold", textDecorationLine: "underline" }}
+              style={{
+                fontWeight: "bold",
+                textAlign: "center",
+              }}
             >
               Desc.
             </Text>
           </View>
-          <View style={{ flex: 1, alignSelf: "stretch" }}>
+          <View style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}>
             <Text
-              style={{ fontWeight: "bold", textDecorationLine: "underline" }}
+              style={{
+                fontWeight: "bold",
+                textAlign: "center",
+              }}
             >
               Value
             </Text>
           </View>
           <View style={{ flex: 1, alignSelf: "stretch" }}>
             <Text
-              style={{ fontWeight: "bold", textDecorationLine: "underline" }}
+              style={{
+                fontWeight: "bold",
+                textAlign: "center",
+              }}
             >
               Begin Barter
             </Text>
           </View>
         </View>
-        <Text>{"\n"}</Text>
         {products?.map((product) => (
           <React.Fragment key={product.idProducts}>
             <View
-              style={{ flex: 1, alignSelf: "stretch", flexDirection: "row" }}
+              style={{
+                flex: 1,
+                alignSelf: "stretch",
+                flexDirection: "row",
+                borderWidth: 1,
+              }}
             >
-              <View style={{ flex: 1, alignSelf: "stretch" }}>
-                <Text>{product.quantity}</Text>
+              <View
+                style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}
+              >
+                <Text
+                  style={{ textAlign: "center", textAlignVertical: "center" }}
+                >
+                  {product.quantity}
+                </Text>
               </View>
-              <View style={{ flex: 1, alignSelf: "stretch" }}>
-                <Text>{product.prodName}</Text>
+              <View
+                style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}
+              >
+                <Text style={{ textAlign: "center" }}>{product.prodName}</Text>
               </View>
-              <View style={{ flex: 1, alignSelf: "stretch" }}>
-                <Text>{product.prodDesc}</Text>
+              <View
+                style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}
+              >
+                <Text style={{ textAlign: "center" }}>{product.prodDesc}</Text>
               </View>
-              <View style={{ flex: 1, alignSelf: "stretch" }}>
+              <View
+                style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}
+              >
                 <Text style={{ textAlign: "center" }}>{product.price}</Text>
               </View>
               <View style={{ flex: 1, alignSelf: "stretch" }}>
@@ -214,11 +278,24 @@ export default function Index() {
                     beginBarter(product);
                   }}
                 />
+                {isAdmin ? (
+                  <Pressable onPress={() => deleteItem(product.idProducts)}>
+                    <Text
+                      style={{
+                        textAlign: "center",
+                        color: "red",
+                        fontSize: 18,
+                      }}
+                    >
+                      Remove
+                    </Text>
+                  </Pressable>
+                ) : null}
               </View>
             </View>
-            <Text>{"\n"}</Text>
           </React.Fragment>
         ))}
+        <Text>{"\n"}</Text>
       </View>
     );
   };
@@ -226,7 +303,7 @@ export default function Index() {
   const BarterScreen = () => {
     return (
       <Modal
-        animationType="fade"
+        animationType="none"
         transparent
         visible={bartInfo !== null}
         onRequestClose={() => setBartInfo(null)}
@@ -337,7 +414,7 @@ export default function Index() {
   const OfferScreen = () => {
     return (
       <Modal
-        animationType="fade"
+        animationType="none"
         transparent
         visible={offerInfo !== null}
         onRequestClose={() => setOfferInfo(null)}
@@ -515,7 +592,7 @@ export default function Index() {
   // Where the user selects what to offer
   const OfferSelectionScreen = () => {
     return (
-      <Modal animationType="fade" transparent visible={offerSelected}>
+      <Modal animationType="none" transparent visible={offerSelected}>
         <View
           style={{
             flex: 1,
@@ -703,190 +780,193 @@ export default function Index() {
   const RequestScreen = () => {
     return (
       <Modal
-        animationType="fade"
+        animationType="none"
         transparent
         visible={requestOpen}
         onRequestClose={() => setRequestOpen(false)}
       >
-        <View
-          style={{
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
+        <ScrollView style={{ marginTop: 90, marginBottom: 90 }}>
           <View
             style={{
-              margin: 5,
-              backgroundColor: "white",
-              borderRadius: 20,
-              padding: 35,
+              flex: 1,
+              justifyContent: "center",
               alignItems: "center",
-              shadowColor: "#000",
-              shadowOffset: {
-                width: 0,
-                height: 2,
-              },
-              shadowOpacity: 0.25,
-              shadowRadius: 4,
-              elevation: 5,
             }}
           >
-            <Text
+            <View
               style={{
-                textDecorationLine: "underline",
-                fontWeight: "bold",
-                marginBottom: 20,
+                margin: 5,
+                backgroundColor: "white",
+                borderRadius: 20,
+                padding: 35,
+                alignItems: "center",
+                shadowColor: "#000",
+                shadowOffset: {
+                  width: 0,
+                  height: 2,
+                },
+                shadowOpacity: 0.25,
+                shadowRadius: 4,
+                elevation: 5,
               }}
             >
-              What do you want traded?
-            </Text>
-
-            <>
-              <View
-                style={{
-                  alignSelf: "stretch",
-                  flexDirection: "row",
-                }}
-              >
-                <View style={{ marginRight: 10 }}>
-                  <Text style={{ fontWeight: "bold" }}>Quant.</Text>
-                </View>
-                <View style={{ marginRight: 10 }}>
-                  <Text style={{ fontWeight: "bold" }}>Title</Text>
-                </View>
-                <View style={{ marginRight: 10 }}>
-                  <Text style={{ fontWeight: "bold" }}>Value</Text>
-                </View>
-                <View>
-                  <Pressable
-                    style={[
-                      {
-                        borderRadius: 10,
-                        padding: 5,
-                        elevation: 2,
-                        visibility: "hidden",
-                      },
-                    ]}
-                  >
-                    <Text style={{ color: "white" }}>Select</Text>
-                  </Pressable>
-                </View>
-              </View>
-            </>
-
-            <View>
-              {products?.map((product) => (
-                <React.Fragment key={product.idProducts}>
-                  <View
-                    style={{
-                      // width: "100%",
-                      // flex: 1,
-                      alignSelf: "stretch",
-                      flexDirection: "row",
-                      marginBottom: 10,
-                    }}
-                    key={product.idProducts}
-                  >
-                    <View style={{ marginRight: 10 }}>
-                      <Text>{product.quantity}</Text>
-                    </View>
-                    <View style={{ marginRight: 10 }}>
-                      <Text>{product.prodName}</Text>
-                    </View>
-                    <View style={{ marginRight: 10 }}>
-                      <Text>{product.price}</Text>
-                    </View>
-                    <View>
-                      <Pressable
-                        style={[
-                          {
-                            borderRadius: 10,
-                            padding: 5,
-                            elevation: 2,
-                          },
-                          selectedOffer?.prod.idProducts == product.idProducts
-                            ? { backgroundColor: "#1892ff" }
-                            : { backgroundColor: "#c5c5c5" },
-                        ]}
-                        onPress={() => {
-                          setSelectedOffer({
-                            prod: product,
-                            quant: 1,
-                            borrowed: true,
-                          });
-                        }}
-                      >
-                        <Text style={{ color: "white" }}>Select</Text>
-                      </Pressable>
-                    </View>
-                  </View>
-                  <Text>{"\n"}</Text>
-                </React.Fragment>
-              ))}
-            </View>
-
-            {selectedOffer ? (
               <Text
                 style={{
+                  textDecorationLine: "underline",
                   fontWeight: "bold",
-                  marginBottom: 10,
+                  marginBottom: 20,
                 }}
               >
-                Quantity:{"    "}
-                <TextInput
-                  keyboardType="numeric"
-                  defaultValue={
-                    selectedOffer ? selectedOffer?.quant.toString() : "0"
-                  }
-                  onEndEditing={(e) => handleOfferQuant(e.nativeEvent.text)}
-                  style={{
-                    borderWidth: 1,
-                    borderColor: "#ccc",
-                    padding: 5,
-                    marginLeft: 5,
-                    width: 50,
-                  }}
-                />
-                / {selectedOffer.prod.quantity}
-                {"\n"}
+                What do you want traded?
               </Text>
-            ) : null}
 
-            <View style={{ flexDirection: "row" }}>
-              <Pressable
-                style={[
-                  {
-                    marginRight: 10,
-                    borderRadius: 10,
-                    padding: 10,
-                    elevation: 2,
-                  },
-                  { backgroundColor: "red" },
-                ]}
-                onPress={() => {
-                  setOfferSelected(false);
-                  setSelectedOffer(null);
-                }}
-              >
-                <Text style={{ color: "white" }}>Cancel</Text>
-              </Pressable>
-              <Pressable
-                style={[
-                  { borderRadius: 10, padding: 10, elevation: 2 },
-                  { backgroundColor: "#1892ff" },
-                ]}
-                onPress={() => {
-                  setRequestOpen(false);
-                  setOfferInfo(selectedProduct?.prod as ProductFinal);
-                }}
-                disabled={selectedOffer === null}
-              >
-                <Text style={{ color: "white" }}>Confirm</Text>
-              </Pressable>
+              <>
+                <View
+                  style={{
+                    alignSelf: "stretch",
+                    flexDirection: "row",
+                  }}
+                >
+                  <View style={{ marginRight: 10 }}>
+                    <Text style={{ fontWeight: "bold" }}>Quant.</Text>
+                  </View>
+                  <View style={{ marginRight: 10 }}>
+                    <Text style={{ fontWeight: "bold" }}>Title</Text>
+                  </View>
+                  <View style={{ marginRight: 10 }}>
+                    <Text style={{ fontWeight: "bold" }}>Value</Text>
+                  </View>
+                  <View>
+                    <Pressable
+                      style={[
+                        {
+                          borderRadius: 10,
+                          padding: 5,
+                          elevation: 2,
+                          visibility: "hidden",
+                        },
+                      ]}
+                    >
+                      <Text style={{ color: "white" }}>Select</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              </>
+
+              <View>
+                {products?.map((product) => (
+                  <React.Fragment key={product.idProducts}>
+                    <View
+                      style={{
+                        // width: "100%",
+                        // flex: 1,
+                        alignSelf: "stretch",
+                        flexDirection: "row",
+                        marginBottom: 10,
+                      }}
+                      key={product.idProducts}
+                    >
+                      <View style={{ marginRight: 10 }}>
+                        <Text>{product.quantity}</Text>
+                      </View>
+                      <View style={{ marginRight: 10 }}>
+                        <Text>{product.prodName}</Text>
+                      </View>
+                      <View style={{ marginRight: 10 }}>
+                        <Text>{product.price}</Text>
+                      </View>
+                      <View>
+                        <Pressable
+                          style={[
+                            {
+                              borderRadius: 10,
+                              padding: 5,
+                              elevation: 2,
+                            },
+                            selectedOffer?.prod.idProducts == product.idProducts
+                              ? { backgroundColor: "#1892ff" }
+                              : { backgroundColor: "#c5c5c5" },
+                          ]}
+                          onPress={() => {
+                            setSelectedOffer({
+                              prod: product,
+                              quant: 1,
+                              borrowed: true,
+                            });
+                          }}
+                        >
+                          <Text style={{ color: "white" }}>Select</Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                    <Text>{"\n"}</Text>
+                  </React.Fragment>
+                ))}
+              </View>
+
+              {selectedOffer ? (
+                <Text
+                  style={{
+                    fontWeight: "bold",
+                    marginBottom: 10,
+                  }}
+                >
+                  Quantity:{"    "}
+                  <TextInput
+                    keyboardType="numeric"
+                    defaultValue={
+                      selectedOffer ? selectedOffer?.quant.toString() : "0"
+                    }
+                    onEndEditing={(e) => handleOfferQuant(e.nativeEvent.text)}
+                    style={{
+                      borderWidth: 1,
+                      borderColor: "#ccc",
+                      padding: 5,
+                      marginLeft: 5,
+                      width: 50,
+                    }}
+                  />
+                  / {selectedOffer.prod.quantity}
+                  {"\n"}
+                </Text>
+              ) : null}
+
+              <View style={{ flexDirection: "row" }}>
+                <Pressable
+                  style={[
+                    {
+                      marginRight: 10,
+                      borderRadius: 10,
+                      padding: 10,
+                      elevation: 2,
+                    },
+                    { backgroundColor: "red" },
+                  ]}
+                  onPress={() => {
+                    setOfferSelected(false);
+                    setSelectedOffer(null);
+                    setRequestOpen(false);
+                  }}
+                >
+                  <Text style={{ color: "white" }}>Cancel</Text>
+                </Pressable>
+                <Pressable
+                  style={[
+                    { borderRadius: 10, padding: 10, elevation: 2 },
+                    { backgroundColor: "#1892ff" },
+                  ]}
+                  onPress={() => {
+                    setRequestOpen(false);
+                    setOfferInfo(selectedProduct?.prod as ProductFinal);
+                  }}
+                  disabled={selectedOffer === null}
+                >
+                  <Text style={{ color: "white" }}>Confirm</Text>
+                </Pressable>
+              </View>
             </View>
           </View>
-        </View>
+        </ScrollView>
       </Modal>
     );
   };
@@ -928,7 +1008,14 @@ export default function Index() {
               alignItems: "flex-start",
             }}
           >
-            <Text style={{ fontSize: 24, fontWeight: "bold" }}>
+            <Text
+              style={{
+                fontSize: 24,
+                fontWeight: "bold",
+                textAlign: "center",
+                width: "100%",
+              }}
+            >
               You must be logged in and approved to barter
             </Text>
           </View>

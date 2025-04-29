@@ -10,7 +10,7 @@ from jwt.exceptions import InvalidTokenError
 from passlib.context import CryptContext
 import db
 from db import engine, local_session
-from sqlalchemy import select, or_, update, delete
+from sqlalchemy import and_,select, or_, update, delete
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import exists
 from pydantic import BaseModel
@@ -68,6 +68,17 @@ class ProductInfo(BaseModel):
     posted_by: str | None
     quantity: int | None
 
+class ProductFinal(BaseModel):
+  datetime_created: str
+  idProducts: int
+  is_active: bool
+  is_exchanged: bool
+  posted_by: str | None
+  price: int
+  prodDesc: str
+  prodName: str
+  quantity: int
+
 class TransactionInfo(BaseModel):
     item_exchanged_1: int
     item_exchanged_2: int
@@ -82,6 +93,7 @@ class TransactionInfo(BaseModel):
     quantity_2: int | None = None
     value_1: int | None = None
     value_2: int | None = None
+    part_stage: int | None = None
 
 class TransactionReadable(BaseModel):
     idtransactions: int
@@ -242,6 +254,16 @@ async def add_product(product_info: ProductInfo):
         session.add(new_product)
         session.commit()
 
+#Delete a product
+@app.delete("/products")
+async def delete_product(product: int):
+    print(product)
+
+    with local_session() as session:
+        query = delete(db.Products).where(db.Products.idProducts == product)
+        session.execute(query)
+        session.commit()
+
 #Get a specific user
 @app.post("/user")
 async def get_user(username: str):
@@ -307,29 +329,39 @@ async def get_transactions(username: str | None = None, active_status: bool | No
 
     transactions_arr = []
     with local_session() as session:
+        #All transactions
         if not username and not active_status:
             transactions = session.query(db.Transactions).all()
+        #All active transactions
         elif not username:
             statement = select(db.Transactions).filter_by(is_active=active_status)
             transactions = session.scalars(statement).all()
+        #All of one user's active transactions
         elif active_status:
+            part_step = db.Transactions.part_stage
+            #Requests received
             if requested:
                 statement = select(db.Transactions).filter(
-                    or_(
-                        db.Transactions.party_1 == username,
-                        db.Transactions.via_1 == username
-                    ),
-                    db.Transactions.is_active == active_status
+                    #Partner transaction, received from requestor
+                    (((part_step == 0) & (db.Transactions.party_2 == username)) |
+                    #Partner transaction, received from first pair
+                    ((part_step == 1) & (db.Transactions.party_1 == username)) | 
+                    #Partner transaction, received from requestee
+                    ((part_step == 2) & (db.Transactions.via_1 == username)) |
+                    #Non-partner transaction
+                    ((db.Transactions.via_2 == None) & (db.Transactions.party_1 == username))) & 
+                    (db.Transactions.is_active == active_status)
                 )
+            #Requests sent
             else:
                 statement = select(db.Transactions).filter(
-                    or_(
-                        db.Transactions.party_2 == username,
-                        db.Transactions.via_2 == username
-                    ),
-                    db.Transactions.is_active == active_status
+                    (((db.Transactions.party_2 == username) & (part_step == None)) |
+                    ((part_step < 2) & (db.Transactions.via_2 == username)) |
+                    ((part_step == 2) & (db.Transactions.party_1 == username))) & 
+                    (db.Transactions.is_active == active_status)
                 )
             transactions = session.scalars(statement).all()
+        #One user's complete transactions
         else:
             statement = select(db.Transactions).filter(
                 or_(
@@ -390,78 +422,41 @@ async def add_transaction(transaction_info: TransactionInfo):
 @app.post("/accept_transaction")
 async def accept_transaction(transaction_info: TransactionReadable):
     trans_info = transaction_info.dict()
+    og_trans: TransactionInfo =  await get_orig_transaction(trans_info['idtransactions'])
+    og_trans = vars(og_trans)
+    og_trans.pop('_sa_instance_state')
 
     with local_session() as session:
-        #Create finished transaction
-        dt_finished = str(datetime.now())
-        query = update(db.Transactions).values({"date_ended": dt_finished, "is_active": 0}).where(db.Transactions.idtransactions == trans_info["idtransactions"])
-        session.execute(query)
-        session.commit()
+        if og_trans['part_stage'] == 0 or og_trans["part_stage"] == 2:
+            #Alter values for updated transaction
+            statement = select(db.Products).filter_by(idProducts=og_trans['item_exchanged_1'])
+            product = session.scalars(statement).first()
+            if product is None:
+                raise HTTPException(status_code=404, detail=f"Product 1 ({og_trans['item_exchanged_1']}) not found")
 
-        #Edit products with new values
-        statement = select(db.Transactions).filter_by(idtransactions=trans_info["idtransactions"])
-        real_transaction = session.scalars(statement).first()
-        statement = select(db.Products).filter_by(idProducts=real_transaction.item_exchanged_1)
-        product = session.scalars(statement).first()
-        if product is None:
-            raise HTTPException(status_code=404, detail=f"Product 1 ({real_transaction.item_exchanged_1}) not found")
-
-        #Transfer product 1 to party 2
-        new_quant = product.quantity - real_transaction.quantity_1
-        if new_quant <= 0:
-            statement = update(db.Products).values({"posted_by": real_transaction.party_2}).where(db.Products.idProducts == product.idProducts)
-            session.execute(statement)
+            query = update(db.Transactions).values({"quantity_1": og_trans['quantity_1'] + 1, "value_1": product.price * (og_trans['quantity_1'] + 1), "part_stage": 1}).where(db.Transactions.idtransactions == trans_info['idtransactions'])
+            session.execute(query)
+            
             session.commit()
         else:
-            statement = update(db.Products).values({"quantity": new_quant}).where(db.Products.idProducts == product.idProducts)
-            session.execute(statement)
+            #Create finished transaction
+            dt_finished = str(datetime.now())
+            query = update(db.Transactions).values({"date_ended": dt_finished, "is_active": 0}).where(db.Transactions.idtransactions == trans_info["idtransactions"])
+            session.execute(query)
             session.commit()
 
-            statement = select(db.Products).filter_by(idProducts=real_transaction.item_exchanged_1)
-            product_info = session.scalars(statement).first()
-            prod_info = vars(product_info)
-            prod_info.pop('_sa_instance_state')
-            prod_info['idProducts'] = None
-            prod_info["posted_by"] = real_transaction.party_2
-            prod_info["quantity"] = real_transaction.quantity_1
-            prod_info["datetime_created"] = datetime.now()
-            prod_info["is_active"] = False
-            prod_info["is_exchanged"] = False
-
-            new_product = db.Products(**prod_info)
-            session.add(new_product)
-            session.commit()
-
-        statement = select(db.Products).filter_by(idProducts=real_transaction.item_exchanged_2)
-        product = session.scalars(statement).first()
-        if product is None:
-            raise HTTPException(status_code=404, detail=f"Product 1 ({real_transaction.item_exchanged_2}) not found")
-
-        #Transfer product 1 to party 2
-        new_quant = product.quantity - real_transaction.quantity_2
-        if new_quant <= 0:
-            statement = update(db.Products).values({"posted_by": real_transaction.party_1}).where(db.Products.idProducts == product.idProducts)
-            session.execute(statement)
-            session.commit()
-        else:
-            statement = update(db.Products).values({"quantity": new_quant}).where(db.Products.idProducts == product.idProducts)
-            session.execute(statement)
-            session.commit()
-
-            statement = select(db.Products).filter_by(idProducts=real_transaction.item_exchanged_2)
-            product_info = session.scalars(statement).first()
-            prod_info = vars(product_info)
-            prod_info.pop('_sa_instance_state')
-            prod_info['idProducts'] = None
-            prod_info["posted_by"] = real_transaction.party_1
-            prod_info["quantity"] = real_transaction.quantity_2
-            prod_info["datetime_created"] = datetime.now()
-            prod_info["is_active"] = False
-            prod_info["is_exchanged"] = False
-
-            new_product = db.Products(**prod_info)
-            session.add(new_product)
-            session.commit()
+            #Edit products with new values
+            statement = select(db.Transactions).filter_by(idtransactions=trans_info["idtransactions"])
+            real_transaction = session.scalars(statement).first()
+            
+            loss_1 = 1 if real_transaction.via_1 != None else 0
+            loss_2 = 1 if real_transaction.via_2 != None else 0
+            transfer_prod(trans_info['idtransactions'], real_transaction.party_1, real_transaction.party_2, real_transaction.item_exchanged_1, real_transaction.item_exchanged_2, real_transaction.quantity_1 - loss_2, real_transaction.quantity_2 - loss_1)
+                
+            if real_transaction.via_2 is not None and real_transaction.via_2 != real_transaction.party_1:
+                transfer_prod(trans_info['idtransactions'], real_transaction.party_2, real_transaction.via_2, real_transaction.item_exchanged_1, real_transaction.item_exchanged_1, 1, 0)
+            if real_transaction.via_1 is not None and real_transaction.via_1 != real_transaction.party_2:
+                transfer_prod(trans_info['idtransactions'], real_transaction.party_1, real_transaction.via_1, real_transaction.item_exchanged_2, real_transaction.item_exchanged_2, 1, 0)
 
     return {"message": "Transaction updated successfully"}
 
@@ -481,3 +476,71 @@ async def get_orig_transaction(trans_id: int):
         if transaction is None:
             raise HTTPException(status_code=404, detail="Transaction not found")
         return transaction
+    
+def transfer_prod(trans_id, party_1, party_2, prod_1, prod_2, quant_1, quant_2):
+    with local_session() as session:
+        #Transfer item 1 to party 2
+        statement = select(db.Transactions).filter_by(idtransactions=trans_id)
+        real_transaction = session.scalars(statement).first()
+        statement = select(db.Products).filter_by(idProducts=prod_1)
+        product = session.scalars(statement).first()
+        if product is None:
+            raise HTTPException(status_code=404, detail=f"Product 1 ({prod_1}) not found")
+
+        new_quant = product.quantity - quant_1
+        if new_quant <= 0 and quant_1 > 0:
+            statement = update(db.Products).values({"posted_by": party_2}).where(db.Products.idProducts == product.idProducts)
+            session.execute(statement)
+            session.commit()
+        elif quant_1 > 0:
+            statement = update(db.Products).values({"quantity": new_quant}).where(db.Products.idProducts == product.idProducts)
+            session.execute(statement)
+            session.commit()
+
+            statement = select(db.Products).filter_by(idProducts=prod_1)
+            product_info = session.scalars(statement).first()
+            prod_info = vars(product_info)
+            prod_info.pop('_sa_instance_state')
+            prod_info['idProducts'] = None
+            prod_info["posted_by"] = party_2
+            prod_info["quantity"] = quant_1
+            prod_info["datetime_created"] = datetime.now()
+            prod_info["is_active"] = False
+            prod_info["is_exchanged"] = False
+
+            new_product = db.Products(**prod_info)
+            session.add(new_product)
+            session.commit()
+
+        #Transfer item 2 to party 1
+        statement = select(db.Transactions).filter_by(idtransactions=trans_id)
+        real_transaction = session.scalars(statement).first()
+        statement = select(db.Products).filter_by(idProducts=prod_2)
+        product = session.scalars(statement).first()
+        if product is None:
+            raise HTTPException(status_code=404, detail=f"Product 2 ({prod_2}) not found")
+
+        new_quant = product.quantity - quant_2
+        if new_quant <= 0 and quant_2 > 0:
+            statement = update(db.Products).values({"posted_by": party_1}).where(db.Products.idProducts == product.idProducts)
+            session.execute(statement)
+            session.commit()
+        elif quant_2 > 0:
+            statement = update(db.Products).values({"quantity": new_quant}).where(db.Products.idProducts == product.idProducts)
+            session.execute(statement)
+            session.commit()
+
+            statement = select(db.Products).filter_by(idProducts=prod_2)
+            product_info = session.scalars(statement).first()
+            prod_info = vars(product_info)
+            prod_info.pop('_sa_instance_state')
+            prod_info['idProducts'] = None
+            prod_info["posted_by"] = party_1
+            prod_info["quantity"] = quant_2
+            prod_info["datetime_created"] = datetime.now()
+            prod_info["is_active"] = False
+            prod_info["is_exchanged"] = False
+
+            new_product = db.Products(**prod_info)
+            session.add(new_product)
+            session.commit()
