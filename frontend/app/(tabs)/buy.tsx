@@ -303,7 +303,7 @@ export default function Index() {
   const BarterScreen = () => {
     return (
       <Modal
-        animationType="fade"
+        animationType="none"
         transparent
         visible={bartInfo !== null}
         onRequestClose={() => setBartInfo(null)}
@@ -414,7 +414,7 @@ export default function Index() {
   const OfferScreen = () => {
     return (
       <Modal
-        animationType="fade"
+        animationType="none"
         transparent
         visible={offerInfo !== null}
         onRequestClose={() => setOfferInfo(null)}
@@ -592,7 +592,7 @@ export default function Index() {
   // Where the user selects what to offer
   const OfferSelectionScreen = () => {
     return (
-      <Modal animationType="fade" transparent visible={offerSelected}>
+      <Modal animationType="none" transparent visible={offerSelected}>
         <View
           style={{
             flex: 1,
@@ -780,12 +780,12 @@ export default function Index() {
   const RequestScreen = () => {
     return (
       <Modal
-        animationType="fade"
+        animationType="none"
         transparent
         visible={requestOpen}
         onRequestClose={() => setRequestOpen(false)}
       >
-        <ScrollView>
+        <ScrollView style={{ marginTop: 90, marginBottom: 90 }}>
           <View
             style={{
               flex: 1,
@@ -945,6 +945,7 @@ export default function Index() {
                   onPress={() => {
                     setOfferSelected(false);
                     setSelectedOffer(null);
+                    setRequestOpen(false);
                   }}
                 >
                   <Text style={{ color: "white" }}>Cancel</Text>

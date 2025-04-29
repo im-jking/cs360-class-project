@@ -346,6 +346,23 @@ export default function Index() {
       .catch((error) => console.error("Error deleting user: " + error));
   };
 
+  //Remove a product
+  const deleteItem = async (productID: number) => {
+    await fetch(`${HOST_WITH_PORT_API}/products?product=${productID}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${await getToken("user")}`,
+      },
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        console.log(response);
+        getOwnProducts();
+      })
+      .catch((error) => console.error(error));
+  };
+
   const bottomBarHeight = useBottomTabBarHeight();
 
   const OwnProducts = () => {
@@ -363,24 +380,29 @@ export default function Index() {
             borderWidth: 1,
           }}
         >
-          <View style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}>
+          <View style={{ flex: 2, alignSelf: "stretch", borderRightWidth: 1 }}>
             <Text style={{ fontWeight: "bold", textAlign: "center" }}>
               Quantity
             </Text>
           </View>
-          <View style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}>
+          <View style={{ flex: 2, alignSelf: "stretch", borderRightWidth: 1 }}>
             <Text style={{ fontWeight: "bold", textAlign: "center" }}>
               Name
             </Text>
           </View>
-          <View style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}>
+          <View style={{ flex: 2, alignSelf: "stretch", borderRightWidth: 1 }}>
             <Text style={{ fontWeight: "bold", textAlign: "center" }}>
-              Description
+              Desc.
+            </Text>
+          </View>
+          <View style={{ flex: 2, alignSelf: "stretch", borderRightWidth: 1 }}>
+            <Text style={{ fontWeight: "bold", textAlign: "center" }}>
+              Value
             </Text>
           </View>
           <View style={{ flex: 1, alignSelf: "stretch" }}>
             <Text style={{ fontWeight: "bold", textAlign: "center" }}>
-              Value
+              Del.
             </Text>
           </View>
         </View>
@@ -396,22 +418,33 @@ export default function Index() {
               }}
             >
               <View
-                style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}
+                style={{ flex: 2, alignSelf: "stretch", borderRightWidth: 1 }}
               >
                 <Text style={{ textAlign: "center" }}>{product.quantity}</Text>
               </View>
               <View
-                style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}
+                style={{ flex: 2, alignSelf: "stretch", borderRightWidth: 1 }}
               >
                 <Text style={{ textAlign: "center" }}>{product.prodName}</Text>
               </View>
               <View
-                style={{ flex: 1, alignSelf: "stretch", borderRightWidth: 1 }}
+                style={{ flex: 2, alignSelf: "stretch", borderRightWidth: 1 }}
               >
                 <Text style={{ textAlign: "center" }}>{product.prodDesc}</Text>
               </View>
-              <View style={{ flex: 1, alignSelf: "stretch" }}>
+              <View
+                style={{ flex: 2, alignSelf: "stretch", borderRightWidth: 1 }}
+              >
                 <Text style={{ textAlign: "center" }}>{product.price}</Text>
+              </View>
+              <View style={{ flex: 1, alignSelf: "stretch" }}>
+                <Pressable onPress={() => deleteItem(product.idProducts)}>
+                  <Text
+                    style={{ color: "red", textAlign: "center", fontSize: 20 }}
+                  >
+                    X
+                  </Text>
+                </Pressable>
               </View>
             </View>
           </React.Fragment>
@@ -915,7 +948,6 @@ export default function Index() {
       getAdminInfo(user);
     }
   }, [isFocused]);
-  8;
 
   return (
     <SafeAreaView style={{ flex: 1 }}>

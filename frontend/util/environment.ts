@@ -1,8 +1,8 @@
 //Defines environment variables for the network/system
 
 //Should be changed based on running system
-// const HOST = "192.168.88.44";
-const HOST = "192.168.88.42";
+const HOST = "172.29.163.181";
+// const HOST = "192.168.88.42";
 export const HOST_WITH_PORT_API = `http://${HOST}:8000`;
 
 export var curUser: string | null = null;
